@@ -1,4 +1,4 @@
 *.txt
 *.pdf
 *.xopp
-__pycache__
+__pycache__/
