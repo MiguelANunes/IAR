@@ -1,1 +1,1 @@
-cd ./dump/; rm *.txt
+cd ./dump/; rm *
