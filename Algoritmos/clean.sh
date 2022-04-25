@@ -1,0 +1,1 @@
+cd ./dump/; rm *.txt
