@@ -16,13 +16,20 @@ def draw(formigueiro, formigas, DISPLAY, width, height):
                 r = 255 if r >= 256 else r
                 Cor = (r, 0, 0)
             # desenhando quadrados das formigas/mapa/itens
+            # try:
             pygame.draw.rect(DISPLAY, Cor, (14*pos_x, 12*pos_y, 14, 12))
+            # except ValueError:
+            #     print(Cor)
+            #     input()
             pos_y += 1
         pos_x += 1
 
     for f in formigas:
         x, y = f.current_pos
-        Cor = (128, 128, 128)
+        if f.current_state == 1:
+            Cor = (64, 64, 128)
+        else:
+            Cor = (128, 128, 128)
         pygame.draw.rect(DISPLAY, Cor, (14*x, 12*y, 10, 10))
 
     for x in range(0,700,14): # desenhando linhas verticais separadoras

@@ -25,22 +25,59 @@ def simulate(formigueiro, formigas):
         else:
             Logic.state_carrying(f,formigueiro)
 
+def check_pause():
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            pygame.quit()
+            sys.exit()
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                return True
+
+    return False
+
+def check_resume():
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            pygame.quit()
+            sys.exit()
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                return False
+
+    return True
+
+# def check_kill():
+#     for event in pygame.event.get():
+#         if event.type == QUIT:
+#             pygame.quit()
+#             sys.exit()
+#         if event.type == pygame.KEYDOWN:
+#             if event.key == pygame.K_ESCAPE:
+#                 pygame.quit()
+#                 sys.exit()
+
 def main_loop(DISPLAY):
     formigueiro, formigas = Logic.cria_formigueiro()
     iteracao = 0
 
+    pause = False
     while(True):
+
+        if pause:
+            pause = check_resume()
+        else:
+            pause = check_pause()
+
         # if iteracao % 50 == 0:
         #     dump_formigueiro(formigueiro, iteracao)
-        simulate(formigueiro, formigas)
-        Render.draw(formigueiro, formigas, DISPLAY, width, height)
-        pygame.display.update()
-        iteracao += 1
+            
+        if not pause:
+            simulate(formigueiro, formigas)
+            Render.draw(formigueiro, formigas, DISPLAY, width, height)
+            pygame.display.update()
+            iteracao += 1
 
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                pygame.quit()
-                sys.exit()
 
 def main():
     # https://stackoverflow.com/questions/66209365/how-to-save-pygame-scene-as-jpeg

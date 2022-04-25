@@ -128,7 +128,8 @@ def state_not_carrying(formiga: Formiga, formigueiro):
         move = candidates[randint(0,len(candidates)-1)]
 
     # se escolheu a posição atual, pega
-    if move == (pos_x, pos_y):
+    if move == (pos_x, pos_y)  and formigueiro[x][y] != 0:
+        # não pega se não tem nada
         action_pick_up(formiga, formigueiro)
         formiga.change_state(1)
         return
@@ -140,6 +141,8 @@ def state_not_carrying(formiga: Formiga, formigueiro):
 def action_pick_up(formiga: Formiga, formigueiro):
     x, y = formiga.current_pos
     formigueiro[x][y] -= 1
+    if formigueiro[x][y] < 0:
+        formigueiro[x][y] = 0
 
 def action_drop(formiga: Formiga, formigueiro):
     x, y = formiga.current_pos
