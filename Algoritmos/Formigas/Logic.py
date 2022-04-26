@@ -83,7 +83,7 @@ def state_carrying(formiga: Formiga, formigueiro):
                     if formigueiro[x][y] == 1:
                         vizinhos_cheios += 1
             
-            if (vizinhos_cheios/8) >= random():
+            if (vizinhos_cheios/8)**3 >= random():
                 action_drop(formiga, formigueiro)
                 formiga.change_state(0)
                 return
@@ -131,7 +131,7 @@ def state_not_carrying(formiga: Formiga, formigueiro):
                     if formigueiro[x][y] == 0:
                         vizinhos_vazios += 1
             
-            if (vizinhos_vazios/8) >= random():
+            if (vizinhos_vazios/8)**3 >= random():
                 action_pick_up(formiga, formigueiro)
                 formiga.change_state(1)
                 return
