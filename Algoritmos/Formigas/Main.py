@@ -4,7 +4,7 @@ from contextlib import redirect_stdout
 import pygame       #pip install pygame
 from pygame.locals import *
 
-import sys, os, Render, Logic
+import sys, os, time, Render, Logic
 
 width, height = 700, 600
 
@@ -68,25 +68,30 @@ def main_loop(DISPLAY):
         if pause == None:
             return
 
-        if iteracao % 500 == 0:
-            dump_formigueiro(formigueiro, iteracao)
+        # if iteracao % 500 == 0:
+        #     dump_formigueiro(formigueiro, iteracao)
             
         if not pause:
             Render.draw(formigueiro, formigas, DISPLAY, width, height)
             pygame.display.update()
             simulate(formigueiro, formigas)
+            # time.sleep(0.5)
 
-            if iteracao % 1000 == 0:
-                pygame.image.save(DISPLAY , "dump/formigueiro"+str(iteracao)+".jpg")
+            # if iteracao >= 1000:
+            #     sys.exit()
+
+            # if iteracao % 1000 == 0:
+            #     pygame.image.save(DISPLAY , "dump/formigueiro"+str(iteracao)+".jpg")
             
             iteracao += 1
 
 
 def main():
+    # https://www.geeksforgeeks.org/command-line-arguments-in-python/
     pygame.init()
     DISPLAY = pygame.display.set_mode((width, height), 0, 32)
     pygame.display.set_caption("Formigas")
-    DISPLAY.fill((255,255,255))
+    DISPLAY.fill((0,128,0))
 
     main_loop(DISPLAY)
 

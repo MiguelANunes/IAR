@@ -40,6 +40,9 @@ def draw_dump(filename, DISPLAY, width, height):
     with open("dump/"+filename) as f:
         formigueiro = [[int(cell) for cell in line.split(" ") if cell != '\n'] for line in f]
 
+    print(formigueiro)
+    print(type(formigueiro))
+    input()
     name = filename.replace("formigueiro","")
     name = name.replace(".txt","")
     
