@@ -12,7 +12,7 @@ pygame.init()
 DISPLAY = pygame.display.set_mode((width, height), 0, 32)
 
 def dump_formigueiro(formigueiro, iteracao):
-    file_formigueiro = "dump/formigueiro"+str(iteracao)+".txt"
+    file_formigueiro = "dump/formigueiro_Iter"+str(iteracao)+".txt"
 
     with open(file_formigueiro, 'w')  as f:
         with redirect_stdout(f):
@@ -20,6 +20,17 @@ def dump_formigueiro(formigueiro, iteracao):
                 for item in linha:
                     print(item, end=" ")
                 print()
+
+def dump_formigueiro2(formigueiro, iteracao):
+    file_formigueiro = "dump/formigueiro2D"+str(iteracao)+".txt"
+
+    with open(file_formigueiro, 'w')  as f:
+        with redirect_stdout(f):
+            for x in range(50):
+                for y in range(50):
+                    if formigueiro[x][y] != 0:
+                        print(x,y,formigueiro[x][y], end=" ")
+                    print()
 
 def render_dump():
     file_list = []
@@ -41,12 +52,32 @@ def render_dump():
         end_simulation(iteracao)
     pygame.quit()
 
-def simulate(formigueiro, formigas):
+def render_dump2():
+    file_list = []
+    with os.scandir("dump/") as folder:
+        for item in folder:
+            if item.name.endswith("txt"):
+                file_list.append(item)
+    
+    print("Escolha a Iteração")
+    for i,file in enumerate(file_list):
+        name = file.name.replace("formigueiro2D","")
+        name = name.replace(".txt","")
+        print(i, name)
+
+    iteracao = file_list[int(input())].name
+    Render.draw_dump(iteracao, DISPLAY, width, height)
+    print("Aperte Espaço p/ salvar uma imagem desta iteração, qualquer outra tecla para sair")
+    while True:
+        end_simulation(iteracao)
+    pygame.quit()
+
+def simulate(formigueiro, formigas, possible_moves):
     for f in formigas:
         if f.current_state == 0:
-            Logic.state_not_carrying(f, formigueiro)
+            Logic.state_not_carrying(f, formigueiro, possible_moves)
         else:
-            Logic.state_carrying(f,formigueiro)
+            Logic.state_carrying(f,formigueiro, possible_moves)
 
 def check_pause():
     for event in pygame.event.get():
@@ -97,6 +128,7 @@ def main_loop(exec_args):
     render_period = 1
     txt_dump = None
     print_period = None
+    raio = 1
     if "iterlimit" in exec_args:
         limite_iter = exec_args["iterlimit"]
     if "renderperiod" in exec_args:
@@ -105,7 +137,15 @@ def main_loop(exec_args):
         txt_dump = exec_args["textdump"]
     if "printrender" in exec_args:
         print_period = exec_args["printrender"]
+    if "raio" in exec_args:
+        raio = exec_args["raio"]
+
     iteracao = 0
+
+    possible_moves = []
+    for i in range(-raio, raio+1):
+        for j in range(-raio, raio+1):  
+            possible_moves.append((i,j))
 
     pause = False
     end = False
@@ -116,11 +156,11 @@ def main_loop(exec_args):
         elif not end:
             pause = check_pause()
 
-        if pause == None:
-            return
-
         if end:
             end_simulation(iteracao)
+
+        if pause == None:
+            return
 
         if txt_dump != None and iteracao % txt_dump == 0:
             dump_formigueiro(formigueiro, iteracao)
@@ -133,8 +173,9 @@ def main_loop(exec_args):
             if iteracao % render_period == 0:
                 Render.draw(formigueiro, formigas, DISPLAY, width, height)
                 pygame.display.update()
-
-            simulate(formigueiro, formigas)
+            # input()
+        
+            simulate(formigueiro, formigas, possible_moves)
 
             if "iterlimit" in exec_args:
                 if limite_iter != None and iteracao >= limite_iter:
@@ -142,33 +183,35 @@ def main_loop(exec_args):
                     print("Fim da Simulação!", iteracao, "Iterações foram Executadas")
                     print("Aperte Espaço p/ salvar uma imagem desta iteração, qualquer outra tecla para sair")
             iteracao += 1
-
             
 def main():
     exec_args = dict()
 
     # argumentos de linha de comando
     parser = argparse.ArgumentParser()
+    parser.add_argument("--radius", help="Define o raio de visão das formigas, padrão 1", type=int, metavar='N')
     parser.add_argument("--iterlimit", help="Limite de Iterações da Simulação", type=int, metavar='N')
     parser.add_argument("--renderperiod", help="Quantas Iterações devem ser executadas antes de renderizar", 
     type=int, metavar='N')
-    parser.add_argument("--textdump", help="Quantas Iterações devem ser executadas antes de escrever matriz num arquivo", 
+    parser.add_argument("--textdump", help="Quantas Iterações devem ser executadas antes de escrever a matriz num arquivo", 
     type=int, metavar='N')
-    parser.add_argument("--printrender", help="Quantas Iterações devem ser executadas antes salvar uma imagem do frame", 
+    parser.add_argument("--printrender", help="Quantas Iterações devem ser executadas antes salvar uma imagem da matriz", 
     type=int, metavar='N')
     parser.add_argument("--renderdump", help="Renderiza um dump de uma matriz, não executa a simulação", 
     action="store_true")
     args = parser.parse_args()
 
-    if args.iterlimit: # implementado
+    if args.radius:
+        exec_args["raio"] = args.radius
+    if args.iterlimit:
         exec_args["iterlimit"] = args.iterlimit
-    if args.renderperiod: # implementado
+    if args.renderperiod:
         exec_args["renderperiod"] = args.renderperiod
-    if args.textdump: # implementado
+    if args.textdump:
         exec_args["textdump"] = args.textdump
-    if args.printrender: # implementado
+    if args.printrender:
         exec_args["printrender"] = args.printrender
-    if args.renderdump: # implementado
+    if args.renderdump:
         render_dump()
         return
 
