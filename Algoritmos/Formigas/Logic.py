@@ -88,12 +88,14 @@ def similaridade(atual, vizinhos, alfa=None):
         return 0
 
 def pegar(atual, vizinhos, alfa=None, const1=None):
+    # tem que receber tamanho da vizinhança
     if const1 == None:
         const1 = 0.3
     s = similaridade(atual,vizinhos,alfa)
     return (const1 / (const1 + s))**2
 
 def largar(atual, vizinhos, alfa=None, const2=None):
+    # tem que receber tamanho da vizinhança
     if const2 == None:
         const2 = 0.5
     s = similaridade(atual,vizinhos,alfa)
@@ -187,8 +189,13 @@ def state_carrying(formiga: Formiga, formigueiro, possible_moves):
     # se escolheu a posição atual, testa para soltar
     if move == (pos_x, pos_y) and formigueiro[pos_x][pos_y] == 0:
         candidates.remove((pos_x, pos_y))
-        # semelhanca = similaridade(, )
-        chance = largar(formigueiro[pos_x][pos_y], candidates)
+
+        vizinhos = []
+        for x,y in candidates:
+            if formigueiro[x][y] != 0:
+                vizinhos.append(formigueiro[x][y])
+
+        chance = largar(formigueiro[pos_x][pos_y], vizinhos)
         
         if chance >= random():
             action_drop(formiga, formigueiro)
@@ -228,7 +235,13 @@ def state_not_carrying(formiga: Formiga, formigueiro, possible_moves):
     # se escolheu a posição atual, testa para pegar
     if move == (pos_x, pos_y) and formigueiro[pos_x][pos_y] != 0:
         candidates.remove((pos_x, pos_y))
-        chance = pegar(formigueiro[pos_x][pos_y], candidates)
+
+        vizinhos = []
+        for x,y in candidates:
+            if formigueiro[x][y] != 0:
+                vizinhos.append(formigueiro[x][y])
+
+        chance = pegar(formigueiro[pos_x][pos_y], vizinhos)
         
         if chance >= random():
             action_pick_up(formiga, formigueiro)
