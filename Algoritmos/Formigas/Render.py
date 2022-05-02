@@ -1,18 +1,46 @@
 import pygame,sys               #pip install pygame
 from pygame.locals import *
 
-def draw(formigueiro, formigas, DISPLAY, width, height):
+# def draw(formigueiro, formigas, DISPLAY, width, height):
+
+#     pos_x = 0 # linha onde vai desenhar
+#     for x in range(50):
+#         pos_y = 0 # coluna onde vai desenhar
+#         for y in range(50):
+
+#             if formigueiro[x][y] == 0:
+#                 Cor = (0, 128, 0)
+#             else:
+#                 Cor = (128, 0, 0)
+#             # desenhando quadrados das formigas/mapa/itens
+#             pygame.draw.rect(DISPLAY, Cor, (14*pos_x, 12*pos_y, 14, 12))
+#             pos_y += 1
+#         pos_x += 1
+
+#     for f in formigas:
+#         x, y = f.current_pos
+#         if f.current_state == 1:
+#             Cor = (192, 192, 192)
+#         else:
+#             Cor = (64, 64, 64)
+#         pygame.draw.rect(DISPLAY, Cor, (14*x, 12*y, 10, 10))
+
+#     for x in range(0,700,14): # desenhando linhas verticais separadoras
+#         pygame.draw.line(DISPLAY, (64,64,64), (x, 0), (x, height))
+#     for y in range(0,600,12): # desenhando linhas horizontais separadoras
+#         pygame.draw.line(DISPLAY, (64,64,64), (0, y), (width, y))
+
+
+def draw(formigueiro, formigas, DISPLAY, width, height, size):
 
     pos_x = 0 # linha onde vai desenhar
     for x in range(50):
         pos_y = 0 # coluna onde vai desenhar
         for y in range(50):
-
-            if formigueiro[x][y] == 0:
-                Cor = (0, 128, 0)
+            if formigueiro[x][y] != 0:
+                Cor = formigueiro[x][y].cor
             else:
-                Cor = (128, 0, 0)
-            # desenhando quadrados das formigas/mapa/itens
+                Cor = (0, 128, 0)
             pygame.draw.rect(DISPLAY, Cor, (14*pos_x, 12*pos_y, 14, 12))
             pos_y += 1
         pos_x += 1
@@ -20,33 +48,9 @@ def draw(formigueiro, formigas, DISPLAY, width, height):
     for f in formigas:
         x, y = f.current_pos
         if f.current_state == 1:
-            Cor = (192, 192, 192)
+            Cor = (232, 232, 232)
         else:
-            Cor = (64, 64, 64)
-        pygame.draw.rect(DISPLAY, Cor, (14*x, 12*y, 10, 10))
-
-    for x in range(0,700,14): # desenhando linhas verticais separadoras
-        pygame.draw.line(DISPLAY, (64,64,64), (x, 0), (x, height))
-    for y in range(0,600,12): # desenhando linhas horizontais separadoras
-        pygame.draw.line(DISPLAY, (64,64,64), (0, y), (width, y))
-
-
-def draw2(formigueiro, formigas, DISPLAY, width, height, size):
-
-    pos_x = 0 # linha onde vai desenhar
-    for x in range(50):
-        pos_y = 0 # coluna onde vai desenhar
-        for y in range(50):
-            pygame.draw.rect(DISPLAY, formigueiro[x][y].cor, (14*pos_x, 12*pos_y, 14, 12))
-            pos_y += 1
-        pos_x += 1
-
-    for f in formigas:
-        x, y = f.current_pos
-        if f.current_state == 1:
-            Cor = (192, 192, 192)
-        else:
-            Cor = (64, 64, 64)
+            Cor = (0, 0, 0)
         pygame.draw.rect(DISPLAY, Cor, (14*x, 12*y, 10, 10))
 
     for x in range(0,700,14): # desenhando linhas verticais separadoras
@@ -65,7 +69,7 @@ def draw_dump(filename, DISPLAY, width, height):
     DISPLAY = pygame.display.set_mode((width, height), 0, 32)
     pygame.display.set_caption("Iteração "+name)
     # DISPLAY.fill((255,255,255))
-    draw(formigueiro, [], DISPLAY, width, height)
+    draw(formigueiro, [], DISPLAY, width, height, 2)
     pygame.display.update()
 
 def draw_dump2(filename, DISPLAY, width, height):
@@ -79,5 +83,5 @@ def draw_dump2(filename, DISPLAY, width, height):
     DISPLAY = pygame.display.set_mode((width, height), 0, 32)
     pygame.display.set_caption("Iteração "+name)
     # DISPLAY.fill((255,255,255))
-    draw2(formigueiro, [], DISPLAY, width, height)
+    draw(formigueiro, [], DISPLAY, width, height, 2)
     pygame.display.update()

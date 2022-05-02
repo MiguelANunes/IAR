@@ -123,7 +123,6 @@ def end_simulation(iteracao):
                 return
 
 def main_loop(exec_args):
-    formigueiro, formigas = Logic.cria_formigueiro()
     limite_iter = None
     render_period = 1
     txt_dump = None
@@ -139,6 +138,15 @@ def main_loop(exec_args):
         print_period = exec_args["printrender"]
     if "raio" in exec_args:
         raio = exec_args["raio"]
+    if "readfrom" in exec_args:
+        filename = exec_args["readfrom"]
+        if "size" in exec_args:
+            size = exec_args["size"]
+        else: 
+            size = 2
+        formigueiro, formigas = Logic.read_formigueiro(size, filename)
+    else:
+        formigueiro, formigas = Logic.cria_formigueiro(2)
 
     iteracao = 0
 
@@ -171,9 +179,9 @@ def main_loop(exec_args):
         if not pause and not end:
 
             if iteracao % render_period == 0:
-                Render.draw(formigueiro, formigas, DISPLAY, width, height)
+                Render.draw(formigueiro, formigas, DISPLAY, width, height, size)
                 pygame.display.update()
-            # input()
+            input()
         
             simulate(formigueiro, formigas, possible_moves)
 
@@ -197,6 +205,9 @@ def main():
     type=int, metavar='N')
     parser.add_argument("--printrender", help="Quantas Iterações devem ser executadas antes salvar uma imagem da matriz", 
     type=int, metavar='N')
+    parser.add_argument("--size", help="Tamanhos dos dados", type=int, metavar='N')
+    parser.add_argument("--readfrom", help="Define o arquivo fonte dos dados para a simulação", 
+    type=str, metavar='filename')
     parser.add_argument("--renderdump", help="Renderiza um dump de uma matriz, não executa a simulação", 
     action="store_true")
     args = parser.parse_args()
@@ -211,6 +222,10 @@ def main():
         exec_args["textdump"] = args.textdump
     if args.printrender:
         exec_args["printrender"] = args.printrender
+    if args.size:
+        exec_args["size"] = args.size
+    if args.readfrom:
+        exec_args["readfrom"] = args.readfrom
     if args.renderdump:
         render_dump()
         return
