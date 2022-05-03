@@ -48,58 +48,55 @@ class Dados:
             b = int(r * 0.75)
             self.cor = (r,0,b)
         elif size == 2:
-            incr = self.attr[randint(0, size-1)]
-            incr *= randint(-2,2)
             if label == 1:
-                self.cor = (128+incr,0,0)
+                self.cor = (200,0,0)
             elif label == 2:
-                self.cor = (0,0,128+incr)
+                self.cor = (0,0,200)
             elif label == 3:
-                self.cor = (128+incr,0,128+incr)
+                self.cor = (200,0,200)
             else:
-                self.cor = (128+incr,128+incr,0)
+                self.cor = (200,200,0)
         else:
             raise Exception("Objeto tem atributos demais para calcular a cor")
 
 def distancia(dado1, dado2):
     sums = []
     for i in range(dado1.size):
-        try:
-            sums.append((dado1.attr[i]-dado2.attr[i])**2)
-        except AttributeError:
-            print(dado1.attr)
-            print(dado2.attr)
-            input()
-    return sum(sums)
+        sums.append((dado1.attr[i]-dado2.attr[i])**2)
+    return math.sqrt(sum(sums))
 
-def similaridade(atual, vizinhos, alfa=None):
+def similaridade(atual, vizinhos, total_vizinhos, alfa=None):
     if alfa == None:
-        alfa = 2
+        alfa = -3
 
     sums = []
     for v in vizinhos:
         x = 1 - distancia(atual, v)
         sums.append(x/alfa)
-    
-    r = (1/len(vizinhos)**2)*sum(sums)
+
+    r = (1/(total_vizinhos**2))*sum(sums)
+
     if r > 0:
         return r
     else:
         return 0
 
-def pegar(atual, vizinhos, alfa=None, const1=None):
-    # tem que receber tamanho da vizinhança
+def pegar(atual, vizinhos, total_vizinhos, alfa=None, const1=None):
     if const1 == None:
-        const1 = 0.3
-    s = similaridade(atual,vizinhos,alfa)
+        const1 = 0.45
+    s = similaridade(atual,vizinhos,total_vizinhos, alfa)
+
     return (const1 / (const1 + s))**2
 
-def largar(atual, vizinhos, alfa=None, const2=None):
-    # tem que receber tamanho da vizinhança
+def largar(atual, vizinhos, total_vizinhos, alfa=None, const2=None):
     if const2 == None:
         const2 = 0.5
-    s = similaridade(atual,vizinhos,alfa)
-    return (s / (const2 + s))**2
+    s = similaridade(atual,vizinhos,total_vizinhos,alfa)
+
+    if s >= const2:
+        return 1
+    else:
+        return 2*s
 
 # def cria_formigueiro():
 #     size_formigueiro = 50 # cria um mapa de 50x50
@@ -155,16 +152,15 @@ def read_formigueiro(size, filename):
             # cell = [c.replace(",",".") for c in cell]
             d = Dados(2,[float(cell[0]),float(cell[1])],int(cell[2]))
             # print(d)
-            print(d.attr)
+            # print(d.attr)
             # input()
             valores.append(d)
 
     return cria_formigueiro(size, valores)
     
-def state_carrying(formiga: Formiga, formigueiro, possible_moves):
+def state_carrying(formiga: Formiga, formigueiro, possible_moves, a=None, k2=None):
     # se a formiga está carregando um corpo
     pos_x, pos_y = formiga.current_pos
-    old_x, old_y = formiga.past_pos
     
     # lista de células cadidatas a receber o corpo que a formiga está carregando
     candidates = [] 
@@ -172,9 +168,6 @@ def state_carrying(formiga: Formiga, formigueiro, possible_moves):
     # direções possíveis de movimento
     for i,j in possible_moves:
         x, y = pos_x+i, pos_y+j
-
-        if (old_x, old_y) == (x, y):
-            continue
         
         if x < 0 or y < 0 or x >= 50 or y >= 50:
             continue
@@ -195,7 +188,7 @@ def state_carrying(formiga: Formiga, formigueiro, possible_moves):
             if formigueiro[x][y] != 0:
                 vizinhos.append(formigueiro[x][y])
 
-        chance = largar(formigueiro[pos_x][pos_y], vizinhos)
+        chance = largar(formiga.contents, vizinhos, len(candidates),a,k2)
         
         if chance >= random():
             action_drop(formiga, formigueiro)
@@ -208,10 +201,9 @@ def state_carrying(formiga: Formiga, formigueiro, possible_moves):
         formiga.move(move)
         return
 
-def state_not_carrying(formiga: Formiga, formigueiro, possible_moves):
+def state_not_carrying(formiga: Formiga, formigueiro, possible_moves, a=None, k1=None):
     # se a formiga não está carregando um corpo
     pos_x, pos_y = formiga.current_pos
-    old_x, old_y = formiga.past_pos
     
     # lista de células cadidatas ao movimento da formiga
     candidates = [] 
@@ -219,9 +211,6 @@ def state_not_carrying(formiga: Formiga, formigueiro, possible_moves):
     # direções possíveis de movimento
     for i,j in possible_moves:
         x, y = pos_x+i, pos_y+j
-
-        if (old_x, old_y) == (x, y):
-            continue
         
         if x < 0 or y < 0 or x >= 50 or y >= 50:
             continue
@@ -241,7 +230,7 @@ def state_not_carrying(formiga: Formiga, formigueiro, possible_moves):
             if formigueiro[x][y] != 0:
                 vizinhos.append(formigueiro[x][y])
 
-        chance = pegar(formigueiro[pos_x][pos_y], vizinhos)
+        chance = pegar(formigueiro[pos_x][pos_y], vizinhos, len(candidates),a,k1)
         
         if chance >= random():
             action_pick_up(formiga, formigueiro)

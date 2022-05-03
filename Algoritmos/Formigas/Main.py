@@ -110,34 +110,37 @@ def end_simulation(iteracao):
         if event.type == QUIT:
             pygame.quit()
             sys.exit()
-            return
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
-                pygame.image.save(DISPLAY , "formigueiro"+str(iteracao)+"END.jpg")
+                print("Execução salva como formigueiro",str(iteracao),"END.jpg")
+                pygame.image.save(DISPLAY , f"formigueiro{str(iteracao)}END.jpg")
                 pygame.quit()
                 sys.exit()
-                return
             else:
                 pygame.quit()
                 sys.exit()
-                return
 
 def main_loop(exec_args):
+
     limite_iter = None
     render_period = 1
     txt_dump = None
-    print_period = None
+    save_period = None
     raio = 1
+    # no_render = False
+
     if "iterlimit" in exec_args:
         limite_iter = exec_args["iterlimit"]
     if "renderperiod" in exec_args:
         render_period = exec_args["renderperiod"]
     if "textdump" in exec_args:
         txt_dump = exec_args["textdump"]
-    if "printrender" in exec_args:
-        print_period = exec_args["printrender"]
+    if "SaveMatrix" in exec_args:
+        save_period = exec_args["SaveMatrix"]
     if "raio" in exec_args:
         raio = exec_args["raio"]
+    # if "norender" in exec_args:
+    #     no_render = True
     if "readfrom" in exec_args:
         filename = exec_args["readfrom"]
         if "size" in exec_args:
@@ -173,7 +176,7 @@ def main_loop(exec_args):
         if txt_dump != None and iteracao % txt_dump == 0:
             dump_formigueiro(formigueiro, iteracao)
 
-        if print_period != None and iteracao % print_period == 0:
+        if save_period != None and iteracao % save_period == 0:
             pygame.image.save(DISPLAY , "dump/formigueiro"+str(iteracao)+".jpg")
             
         if not pause and not end:
@@ -181,7 +184,7 @@ def main_loop(exec_args):
             if iteracao % render_period == 0:
                 Render.draw(formigueiro, formigas, DISPLAY, width, height, size)
                 pygame.display.update()
-            input()
+            # input()
         
             simulate(formigueiro, formigas, possible_moves)
 
@@ -190,7 +193,8 @@ def main_loop(exec_args):
                     end = True
                     print("Fim da Simulação!", iteracao, "Iterações foram Executadas")
                     print("Aperte Espaço p/ salvar uma imagem desta iteração, qualquer outra tecla para sair")
-            iteracao += 1
+                else:
+                    iteracao += 1
             
 def main():
     exec_args = dict()
@@ -203,12 +207,17 @@ def main():
     type=int, metavar='N')
     parser.add_argument("--textdump", help="Quantas Iterações devem ser executadas antes de escrever a matriz num arquivo", 
     type=int, metavar='N')
-    parser.add_argument("--printrender", help="Quantas Iterações devem ser executadas antes salvar uma imagem da matriz", 
+    parser.add_argument("--savematrix", help="Quantas Iterações devem ser executadas antes salvar uma imagem da matriz", 
     type=int, metavar='N')
     parser.add_argument("--size", help="Tamanhos dos dados", type=int, metavar='N')
+    # parser.add_argument("--Alpha", help="Valor p/ parametro alpha", type=int, metavar='N')
+    # parser.add_argument("--K1", help="Valor p/ parametro k1", type=int, metavar='N')
+    # parser.add_argument("--K2", help="Valor p/ parametro k2", type=int, metavar='N')
     parser.add_argument("--readfrom", help="Define o arquivo fonte dos dados para a simulação", 
     type=str, metavar='filename')
     parser.add_argument("--renderdump", help="Renderiza um dump de uma matriz, não executa a simulação", 
+    action="store_true")
+    parser.add_argument("--norender", help="Não renderiza a simulação, salva a imagem ao final da execução", 
     action="store_true")
     args = parser.parse_args()
 
@@ -220,12 +229,14 @@ def main():
         exec_args["renderperiod"] = args.renderperiod
     if args.textdump:
         exec_args["textdump"] = args.textdump
-    if args.printrender:
-        exec_args["printrender"] = args.printrender
+    if args.savematrix:
+        exec_args["savematrix"] = args.savematrix
     if args.size:
         exec_args["size"] = args.size
     if args.readfrom:
         exec_args["readfrom"] = args.readfrom
+    if args.norender:
+        exec_args["norender"] = args.norender
     if args.renderdump:
         render_dump()
         return

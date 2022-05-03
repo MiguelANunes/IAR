@@ -1,4 +1,4 @@
-import pygame,sys               #pip install pygame
+import pygame             #pip install pygame
 from pygame.locals import *
 
 # def draw(formigueiro, formigas, DISPLAY, width, height):
@@ -40,7 +40,7 @@ def draw(formigueiro, formigas, DISPLAY, width, height, size):
             if formigueiro[x][y] != 0:
                 Cor = formigueiro[x][y].cor
             else:
-                Cor = (0, 128, 0)
+                Cor = (200, 200, 200)
             pygame.draw.rect(DISPLAY, Cor, (14*pos_x, 12*pos_y, 14, 12))
             pos_y += 1
         pos_x += 1
@@ -48,7 +48,7 @@ def draw(formigueiro, formigas, DISPLAY, width, height, size):
     for f in formigas:
         x, y = f.current_pos
         if f.current_state == 1:
-            Cor = (232, 232, 232)
+            Cor = (48,48,48)
         else:
             Cor = (0, 0, 0)
         pygame.draw.rect(DISPLAY, Cor, (14*x, 12*y, 10, 10))
