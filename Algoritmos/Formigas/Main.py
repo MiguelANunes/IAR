@@ -105,6 +105,13 @@ def check_resume():
                 return
     return True
 
+def terminar_formigas(formigueiro, formigas, possible_moves):
+    for f in formigas:
+        if f.current_state == 0:
+            formigas.remove(f)
+        else:
+            Logic.state_carrying(f,formigueiro, possible_moves)
+
 def end_simulation(iteracao):
     for event in pygame.event.get():
         if event.type == QUIT:
@@ -127,6 +134,7 @@ def main_loop(exec_args):
     txt_dump = None
     save_period = None
     raio = 1
+    extra_iter = 0
     # no_render = False
 
     if "iterlimit" in exec_args:
@@ -160,6 +168,7 @@ def main_loop(exec_args):
 
     pause = False
     end = False
+    printed = False
     while True:
 
         if pause and not end:
@@ -168,7 +177,19 @@ def main_loop(exec_args):
             pause = check_pause()
 
         if end:
-            end_simulation(iteracao)
+            while formigas != []:
+                terminar_formigas(formigueiro, formigas, possible_moves)
+                Render.draw(formigueiro, formigas, DISPLAY, width, height, size)
+                pygame.display.update()
+                extra_iter += 1
+            if formigas == []:
+                if not printed:
+                    print("Fim da Simulação!", iteracao, "Iterações foram Executadas")
+                    print("Aperte Espaço p/ salvar uma imagem desta iteração, qualquer outra tecla para sair")
+                    print("Foram executadas", extra_iter, "iterações a mais para remover as formigas que ainda carregavam itens")
+                    printed = True
+                end_simulation(iteracao)
+
 
         if pause == None:
             return
@@ -191,8 +212,6 @@ def main_loop(exec_args):
             if "iterlimit" in exec_args:
                 if limite_iter != None and iteracao >= limite_iter:
                     end = True
-                    print("Fim da Simulação!", iteracao, "Iterações foram Executadas")
-                    print("Aperte Espaço p/ salvar uma imagem desta iteração, qualquer outra tecla para sair")
                 else:
                     iteracao += 1
             

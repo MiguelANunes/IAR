@@ -63,16 +63,19 @@ def distancia(dado1, dado2):
     sums = []
     for i in range(dado1.size):
         sums.append((dado1.attr[i]-dado2.attr[i])**2)
-    return math.sqrt(sum(sums))
+    d = math.sqrt(sum(sums))
+    # print(d)
+    return d
 
 def similaridade(atual, vizinhos, total_vizinhos, alfa=None):
     if alfa == None:
-        alfa = -3
+        alfa = -38.6148 
+        # média das distancias de 5 iterações diferentes
 
     sums = []
     for v in vizinhos:
-        x = 1 - distancia(atual, v)
-        sums.append(x/alfa)
+        x = distancia(atual, v)/alfa
+        sums.append(1-x)
 
     r = (1/(total_vizinhos**2))*sum(sums)
 
@@ -83,14 +86,15 @@ def similaridade(atual, vizinhos, total_vizinhos, alfa=None):
 
 def pegar(atual, vizinhos, total_vizinhos, alfa=None, const1=None):
     if const1 == None:
-        const1 = 0.45
+        const1 = 0.75
     s = similaridade(atual,vizinhos,total_vizinhos, alfa)
 
-    return (const1 / (const1 + s))**2
+    p = (const1 / (const1 + s))**2
+    return p
 
 def largar(atual, vizinhos, total_vizinhos, alfa=None, const2=None):
     if const2 == None:
-        const2 = 0.5
+        const2 = 0.25
     s = similaridade(atual,vizinhos,total_vizinhos,alfa)
 
     if s >= const2:
@@ -181,11 +185,10 @@ def state_carrying(formiga: Formiga, formigueiro, possible_moves, a=None, k2=Non
 
     # se escolheu a posição atual, testa para soltar
     if move == (pos_x, pos_y) and formigueiro[pos_x][pos_y] == 0:
-        candidates.remove((pos_x, pos_y))
 
         vizinhos = []
         for x,y in candidates:
-            if formigueiro[x][y] != 0:
+            if formigueiro[x][y] != 0 and (x,y) != (pos_x, pos_y):
                 vizinhos.append(formigueiro[x][y])
 
         chance = largar(formiga.contents, vizinhos, len(candidates),a,k2)
@@ -223,11 +226,10 @@ def state_not_carrying(formiga: Formiga, formigueiro, possible_moves, a=None, k1
 
     # se escolheu a posição atual, testa para pegar
     if move == (pos_x, pos_y) and formigueiro[pos_x][pos_y] != 0:
-        candidates.remove((pos_x, pos_y))
 
         vizinhos = []
         for x,y in candidates:
-            if formigueiro[x][y] != 0:
+            if formigueiro[x][y] != 0 and (x,y) != (pos_x, pos_y):
                 vizinhos.append(formigueiro[x][y])
 
         chance = pegar(formigueiro[pos_x][pos_y], vizinhos, len(candidates),a,k1)
