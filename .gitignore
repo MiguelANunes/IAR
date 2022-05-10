@@ -2,3 +2,4 @@
 *.pdf
 *.xopp
 __pycache__/
+*.jpg

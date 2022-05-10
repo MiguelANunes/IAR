@@ -1,5 +1,5 @@
 from random import randint, choice, random
-from collections import Counter
+# from collections import Counter
 import math
 
 class Formiga:
@@ -69,16 +69,27 @@ def distancia(dado1, dado2):
 
 def similaridade(atual, vizinhos, total_vizinhos, alfa=None):
     if alfa == None:
-        alfa = -38.6148 
+        alfa = 35.4347916 
         # média das distancias de 5 iterações diferentes
 
+    # print("****")
     sums = []
     for v in vizinhos:
         x = distancia(atual, v)/alfa
+        # print("x =",x)
+        # print("1-x=",1-x)
         sums.append(1-x)
 
     r = (1/(total_vizinhos**2))*sum(sums)
-
+    # if vizinhos == []:
+    #     print("Sem vizinhos")
+    # else:
+    #     print("Total Vizinhos=", total_vizinhos)
+    #     print("Total Vizinhos^2=", total_vizinhos**2)
+    #     print("1/Total Vizinhos^2=", 1/total_vizinhos**2)
+    #     print("sum(sums)=",sum(sums))
+    #     print("Similaridade", r)
+    # print("****")
     if r > 0:
         return r
     else:
@@ -86,17 +97,19 @@ def similaridade(atual, vizinhos, total_vizinhos, alfa=None):
 
 def pegar(atual, vizinhos, total_vizinhos, alfa=None, const1=None):
     if const1 == None:
-        const1 = 0.75
+        const1 = 0.4
     s = similaridade(atual,vizinhos,total_vizinhos, alfa)
 
     p = (const1 / (const1 + s))**2
+    # print("Chance de Pegar", p)
     return p
 
 def largar(atual, vizinhos, total_vizinhos, alfa=None, const2=None):
     if const2 == None:
-        const2 = 0.25
+        const2 = 0.85
     s = similaridade(atual,vizinhos,total_vizinhos,alfa)
 
+    # print("Chance de largar", s)
     if s >= const2:
         return 1
     else:
@@ -191,12 +204,13 @@ def state_carrying(formiga: Formiga, formigueiro, possible_moves, a=None, k2=Non
             if formigueiro[x][y] != 0 and (x,y) != (pos_x, pos_y):
                 vizinhos.append(formigueiro[x][y])
 
-        chance = largar(formiga.contents, vizinhos, len(candidates),a,k2)
+        if vizinhos != []:
+            chance = largar(formiga.contents, vizinhos, len(candidates),a,k2)
         
-        if chance >= random():
-            action_drop(formiga, formigueiro)
-            formiga.change_state(0)
-            return
+            if chance >= random():
+                action_drop(formiga, formigueiro)
+                formiga.change_state(0)
+                return
     #se não, move para a posição que escolheu
     # caso falhe na célula estar vazia, formiga vai mover pra célula atual,
     # o que é a mesma coisa que não mover

@@ -72,12 +72,12 @@ def render_dump2():
         end_simulation(iteracao)
     pygame.quit()
 
-def simulate(formigueiro, formigas, possible_moves):
+def simulate(formigueiro, formigas, possible_moves, alfa, const1, const2):
     for f in formigas:
         if f.current_state == 0:
-            Logic.state_not_carrying(f, formigueiro, possible_moves)
+            Logic.state_not_carrying(f, formigueiro, possible_moves, alfa, const1)
         else:
-            Logic.state_carrying(f,formigueiro, possible_moves)
+            Logic.state_carrying(f,formigueiro, possible_moves, alfa, const2)
 
 def check_pause():
     for event in pygame.event.get():
@@ -112,22 +112,22 @@ def terminar_formigas(formigueiro, formigas, possible_moves):
         else:
             Logic.state_carrying(f,formigueiro, possible_moves)
 
-def end_simulation(iteracao):
+def end_simulation(iteracao, alfa, const1, const2):
     for event in pygame.event.get():
         if event.type == QUIT:
             pygame.quit()
             sys.exit()
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
-                print("Execução salva como formigueiro",str(iteracao),"END.jpg")
-                pygame.image.save(DISPLAY , f"formigueiro{str(iteracao)}END.jpg")
+                print(f"Execução salva como formigueiro{str(iteracao)},a={alfa},k1={const1},k2={const2}-END.jpg")
+                pygame.image.save(DISPLAY , f"formigueiro{str(iteracao)},a={alfa},k1={const1},k2={const2}-END.jpg")
                 pygame.quit()
                 sys.exit()
             else:
                 pygame.quit()
                 sys.exit()
 
-def main_loop(exec_args):
+def main_loop(exec_args, alfa, const1, const2):
 
     limite_iter = None
     render_period = 1
@@ -158,6 +158,12 @@ def main_loop(exec_args):
         formigueiro, formigas = Logic.read_formigueiro(size, filename)
     else:
         formigueiro, formigas = Logic.cria_formigueiro(2)
+    if "startpaused" in exec_args:
+        Render.draw(formigueiro, formigas, DISPLAY, width, height, size)
+        pygame.display.update() # gambiarra pra renderizar a janela no primeiro instante
+        pause = True
+    else:
+        pause = False
 
     iteracao = 0
 
@@ -166,7 +172,6 @@ def main_loop(exec_args):
         for j in range(-raio, raio+1):  
             possible_moves.append((i,j))
 
-    pause = False
     end = False
     printed = False
     while True:
@@ -188,7 +193,9 @@ def main_loop(exec_args):
                     print("Aperte Espaço p/ salvar uma imagem desta iteração, qualquer outra tecla para sair")
                     print("Foram executadas", extra_iter, "iterações a mais para remover as formigas que ainda carregavam itens")
                     printed = True
-                end_simulation(iteracao)
+                Render.draw(formigueiro, formigas, DISPLAY, width, height, size)
+                pygame.display.update()
+                end_simulation(iteracao, alfa, const1, const2)
 
 
         if pause == None:
@@ -207,7 +214,7 @@ def main_loop(exec_args):
                 pygame.display.update()
             # input()
         
-            simulate(formigueiro, formigas, possible_moves)
+            simulate(formigueiro, formigas, possible_moves, alfa, const1, const2)
 
             if "iterlimit" in exec_args:
                 if limite_iter != None and iteracao >= limite_iter:
@@ -217,6 +224,10 @@ def main_loop(exec_args):
             
 def main():
     exec_args = dict()
+
+    alfa = 35.4347916
+    const1 = 0.25
+    const2 = 0.9
 
     # argumentos de linha de comando
     parser = argparse.ArgumentParser()
@@ -229,14 +240,15 @@ def main():
     parser.add_argument("--savematrix", help="Quantas Iterações devem ser executadas antes salvar uma imagem da matriz", 
     type=int, metavar='N')
     parser.add_argument("--size", help="Tamanhos dos dados", type=int, metavar='N')
-    # parser.add_argument("--Alpha", help="Valor p/ parametro alpha", type=int, metavar='N')
-    # parser.add_argument("--K1", help="Valor p/ parametro k1", type=int, metavar='N')
-    # parser.add_argument("--K2", help="Valor p/ parametro k2", type=int, metavar='N')
     parser.add_argument("--readfrom", help="Define o arquivo fonte dos dados para a simulação", 
     type=str, metavar='filename')
     parser.add_argument("--renderdump", help="Renderiza um dump de uma matriz, não executa a simulação", 
     action="store_true")
     parser.add_argument("--norender", help="Não renderiza a simulação, salva a imagem ao final da execução", 
+    action="store_true")
+    parser.add_argument("--startpaused", help="Inicia a simulação pausada", 
+    action="store_true")
+    parser.add_argument("--readconst", help="Lê os valores de alpha, k1 e k2 do teclado", 
     action="store_true")
     args = parser.parse_args()
 
@@ -256,6 +268,22 @@ def main():
         exec_args["readfrom"] = args.readfrom
     if args.norender:
         exec_args["norender"] = args.norender
+    if args.startpaused:
+        exec_args["startpaused"] = args.startpaused
+    if args.readconst:
+        a1   = input(f"Digite o valor de alfa, default = {alfa}, 0 p/ pular: ")
+        c1 = input(f"Digite o valor de k1, default = {const1}, 0 p/ pular: ")
+        c2 = input(f"Digite o valor de k2, default = {const2}, 0 p/ pular: ")
+
+        if a1 != "0":
+            alfa = float(a1)
+
+        if c1 != "0":
+            const1 = float(c1)
+
+        if c2 != "0":
+            const2 = float(c2)
+
     if args.renderdump:
         render_dump()
         return
@@ -263,7 +291,7 @@ def main():
     pygame.display.set_caption("Formigas")
     DISPLAY.fill((0,128,0))
 
-    main_loop(exec_args)
+    main_loop(exec_args, alfa, const1, const2)
 
 if __name__ == "__main__":
     main()

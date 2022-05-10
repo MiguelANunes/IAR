@@ -29,5 +29,9 @@ res3 = sum(valores3)/len(valores3)
 res4 = sum(valores4)/len(valores4)
 res5 = sum(valores5)/len(valores5)
 
-final = sum([res1,res2,res3,res4,res5])/5
-print(final)
+# final = sum([res1,res2,res3,res4,res5])/5
+print(res1)
+print(res2)
+print(res3)
+print(res4)
+print(res5)
