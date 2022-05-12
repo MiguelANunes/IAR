@@ -3,9 +3,6 @@ from collections import Counter
 import math
 
 class Formiga(object):
-    current_pos   = (-1,-1)
-    past_pos      = (-1,-1)
-    current_state = -1
     # Estado 0 == Não carregando
     # Estado 1 == Carregando
 
@@ -17,7 +14,6 @@ class Formiga(object):
     def move(self, new_pos):
         self.past_pos = self.current_pos
         self.current_pos = new_pos
-        self.last_action = 2
 
     def change_state(self, new_state):
         self.current_state = new_state
@@ -33,7 +29,7 @@ def cria_formigueiro():
         while formigueiro[x][y] == 1:
             x = randint(0, 49)
             y = randint(0, 49)
-        formigueiro[x][y] += 1
+        formigueiro[x][y] = 1
 
     for _ in range(10): # insere 10 formigas
         x = randint(0, 49)
@@ -42,28 +38,21 @@ def cria_formigueiro():
 
     return (formigueiro, formigas)
 
-def state_carrying(formiga: Formiga, formigueiro):
+def state_carrying(formiga: Formiga, formigueiro, possible_moves):
     # se a formiga está carregando um corpo
     pos_x, pos_y = formiga.current_pos
-    old_x, old_y = formiga.past_pos
-    
+
     # lista de células cadidatas a receber o corpo que a formiga está carregando
     candidates = [] 
 
     # direções possíveis de movimento
-    raio = 1
+    for i,j in possible_moves:
+        x, y = pos_x+i, pos_y+j
+        
+        if x < 0 or y < 0 or x >= 50 or y >= 50:
+            continue
 
-    for i in range(-raio, raio+1):
-        for j in range(-raio, raio+1):
-            x, y = pos_x+i, pos_y+j
-
-            if (old_x, old_y) == (x, y):
-                continue
-            
-            if x < 0 or y < 0 or x >= 50 or y >= 50:
-                continue
-
-            candidates.append((pos_x+i, pos_y+j))
+        candidates.append((x,y))
 
     # escolhendo um movimento
     move = choice(candidates)
@@ -75,15 +64,14 @@ def state_carrying(formiga: Formiga, formigueiro):
         vizinhos_cheios = 0
         if formigueiro[pos_x][pos_y] == 0:
 
-            for i in range(-raio, raio+1):
-                for j in range(-raio, raio+1):
-                    x, y = pos_x+i, pos_y+j
-                    if x < 0 or y < 0 or x >= 50 or y >= 50:
-                        continue
-                    if formigueiro[x][y] == 1:
-                        vizinhos_cheios += 1
+            for i,j in possible_moves:
+                x, y = pos_x+i, pos_y+j
+                if x < 0 or y < 0 or x >= 50 or y >= 50:
+                    continue
+                if formigueiro[x][y] == 1:
+                    vizinhos_cheios += 1
             
-            if (vizinhos_cheios/8) >= random():
+            if (vizinhos_cheios/len(possible_moves))**3 >= random():
                 action_drop(formiga, formigueiro)
                 formiga.change_state(0)
                 return
@@ -92,27 +80,21 @@ def state_carrying(formiga: Formiga, formigueiro):
         formiga.move(move)
         return
 
-def state_not_carrying(formiga: Formiga, formigueiro):
+def state_not_carrying(formiga: Formiga, formigueiro, possible_moves):
     # se a formiga não está carregando um corpo
     pos_x, pos_y = formiga.current_pos
-    old_x, old_y = formiga.past_pos
-    
-    # lista de células cadidatas ao movimento da formiga
+
+    # lista de células cadidatas a receber o corpo que a formiga está carregando
     candidates = [] 
 
     # direções possíveis de movimento
-    raio = 1
-    for i in range(-raio, raio+1):
-        for j in range(-raio, raio+1):
-            x, y = pos_x+i, pos_y+j
+    for i,j in possible_moves:
+        x, y = pos_x+i, pos_y+j
+        
+        if x < 0 or y < 0 or x >= 50 or y >= 50:
+            continue
 
-            if (old_x, old_y) == (x, y):
-                continue
-            
-            if x < 0 or y < 0 or x >= 50 or y >= 50:
-                continue
-            
-            candidates.append((x,y))
+        candidates.append((x,y))
 
     move = choice(candidates)
     while move == formiga.past_pos:
@@ -123,31 +105,27 @@ def state_not_carrying(formiga: Formiga, formigueiro):
         vizinhos_vazios = 0
         if formigueiro[pos_x][pos_y] == 1:
 
-            for i in range(-raio, raio+1):
-                for j in range(-raio, raio+1):
-                    x, y = pos_x+i, pos_y+j
-                    if x < 0 or y < 0 or x >= 50 or y >= 50:
-                        continue
-                    if formigueiro[x][y] == 0:
-                        vizinhos_vazios += 1
+            for i,j in possible_moves:
+                x, y = pos_x+i, pos_y+j
+                if x < 0 or y < 0 or x >= 50 or y >= 50:
+                    continue
+                if formigueiro[x][y] == 0:
+                    vizinhos_vazios += 1
             
-            if (vizinhos_vazios/8) >= random():
+            if (vizinhos_vazios/len(possible_moves))**3 >= random():
                 action_pick_up(formiga, formigueiro)
                 formiga.change_state(1)
                 return
 
     # se não, move para lá
     else:
-        if move != (old_x,old_y):
-            formiga.move(move)
+        formiga.move(move)
         return
 
 def action_pick_up(formiga: Formiga, formigueiro):
     x, y = formiga.current_pos
-    formigueiro[x][y] -= 1
-    if formigueiro[x][y] < 0:
-        formigueiro[x][y] = 0
+    formigueiro[x][y] = 0
 
 def action_drop(formiga: Formiga, formigueiro):
     x, y = formiga.current_pos
-    formigueiro[x][y] += 1
+    formigueiro[x][y] = 1
