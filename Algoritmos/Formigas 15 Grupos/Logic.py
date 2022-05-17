@@ -62,7 +62,7 @@ def distancia(dado1, dado2):
 
 def similaridade(atual, vizinhos, total_vizinhos, alfa=None):
     if alfa == None:
-        alfa = 5.651564006570254 + 1.2
+        alfa = 5.651564006570254
 
     sums = []
     for v in vizinhos:

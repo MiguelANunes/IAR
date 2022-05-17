@@ -224,9 +224,9 @@ def main_loop(exec_args, alfa, const1, const2):
 def main():
     exec_args = dict()
 
-    alfa = 1
-    const1 = 0.25
-    const2 = 0.9
+    alfa = 4.5#5.651564006570254
+    const1 = 0.19
+    const2 = 0.6
 
     # argumentos de linha de comando
     parser = argparse.ArgumentParser()
@@ -294,5 +294,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-#aaaaaaaaaaaaaaaaaaaaaaaaaaa
