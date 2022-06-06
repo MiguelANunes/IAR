@@ -224,7 +224,7 @@ def main_loop(exec_args, alfa, const1, const2):
 def main():
     exec_args = dict()
 
-    alfa = 35.4347916
+    alfa = 1#5.651564006570254
     const1 = 0.25
     const2 = 0.9
 

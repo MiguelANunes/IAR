@@ -216,16 +216,15 @@ def main_loop(exec_args, alfa, const1, const2):
         
             simulate(formigueiro, formigas, possible_moves, alfa, const1, const2)
 
-            if "iterlimit" in exec_args:
-                if limite_iter != None and iteracao >= limite_iter:
-                    end = True
-                else:
-                    iteracao += 1
+            if limite_iter != None and iteracao >= limite_iter:
+                end = True
+            else:
+                iteracao += 1
             
 def main():
     exec_args = dict()
 
-    alfa = 35.4347916
+    alfa = 30#35.4347916
     const1 = 0.25
     const2 = 0.9
 

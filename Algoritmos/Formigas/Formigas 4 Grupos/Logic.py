@@ -26,31 +26,38 @@ class Formiga:
         self.current_state = new_state
 
 class Dados: 
+    # https://docs.python.org/3/tutorial/classes.html
+    # Passar argumento para o construtor para definir o tamanho
+    # dos dados ao inves de hard-codar isso
+    # Tamanho = 0 seria somente as formigas mortas
+    # Generalizar as funções pra lidar com dados de tamanho desconhecido
 
-    def __init__(self, size, valores, label):
+    def __init__(self, size, valores, label=None):
+        # criando um dado com tamanho de atributo variável
         self.attr = []
         self.size = size
-        self.label = label
+        if label is not None:
+            self.label = label
         for i in range(size):
             self.attr.append(valores[i])
-        if label % 2 == 0:
-            r  = 20*label if 20*label < 255 else 255
-            bg = 10*label if 10*label < 255 else 200
-            if r < 50:
-                r += 30
-            self.cor = (r,int(2*bg/5),int(3*bg/5))
-        elif label % 5 == 0:
-            g  = 20*label if 20*label < 255 else 255
-            rb = 10*label if 10*label < 255 else 200
-            if g < 50:
-                g += 30
-            self.cor = (int(3*rb/5),g,int(2*rb/5))
+        if size == 0:
+            self.cor = (128,0,0)
+        elif size == 1:
+            r = valores[0] if valores[0] > 0 else valores[0]*-1
+            r = 255 if r * 4 > 255 else r * 4
+            b = int(r * 0.75)
+            self.cor = (r,0,b)
+        elif size == 2:
+            if label == 1:
+                self.cor = (200,0,0)
+            elif label == 2:
+                self.cor = (0,0,200)
+            elif label == 3:
+                self.cor = (200,0,200)
+            else:
+                self.cor = (200,200,0)
         else:
-            b  = 20*label if 20*label < 255 else 255
-            rg = 10*label if 10*label < 255 else 200
-            if b < 50:
-                b += 30
-            self.cor = (int(2*rg/5),int(3*rg/5),b)
+            raise Exception("Objeto tem atributos demais para calcular a cor")
 
 def distancia(dado1, dado2):
     sums = []
@@ -62,14 +69,27 @@ def distancia(dado1, dado2):
 
 def similaridade(atual, vizinhos, total_vizinhos, alfa=None):
     if alfa == None:
-        alfa = 5.651564006570254
+        alfa = 35.4347916 
+        # média das distancias de 5 iterações diferentes
 
+    # print("****")
     sums = []
     for v in vizinhos:
         x = distancia(atual, v)/alfa
+        # print("x =",x)
+        # print("1-x=",1-x)
         sums.append(1-x)
 
-    r = (1/(total_vizinhos**2))*sum(sums)
+    r = (1/(total_vizinhos))*sum(sums)
+    # if vizinhos == []:
+    #     print("Sem vizinhos")
+    # else:
+    #     print("Total Vizinhos=", total_vizinhos)
+    #     print("Total Vizinhos^2=", total_vizinhos**2)
+    #     print("1/Total Vizinhos^2=", 1/total_vizinhos**2)
+    #     print("sum(sums)=",sum(sums))
+    #     print("Similaridade", r)
+    # print("****")
     if r > 0:
         return r
     else:
@@ -81,31 +101,52 @@ def pegar(atual, vizinhos, total_vizinhos, alfa=None, const1=None):
     s = similaridade(atual,vizinhos,total_vizinhos, alfa)
 
     p = (const1 / (const1 + s))**2
+    # print("Chance de Pegar", p)
     return p
 
 def largar(atual, vizinhos, total_vizinhos, alfa=None, const2=None):
     if const2 == None:
-        const2 = 0.8
+        const2 = 0.85
     s = similaridade(atual,vizinhos,total_vizinhos,alfa)
 
+    # print("Chance de largar", s)
     if s >= const2:
         return 1
     else:
         return 2*s
 
+# def cria_formigueiro():
+#     size_formigueiro = 50 # cria um mapa de 50x50
+#     formigueiro = [[0 for i in range(size_formigueiro)] for i in range(size_formigueiro)]
+#     formigas = []
+
+#     for _ in range(1000): # insere 1000 itens
+#         x = randint(0, 49)
+#         y = randint(0, 49)
+#         while formigueiro[x][y] == 1:
+#             x = randint(0, 49)
+#             y = randint(0, 49)
+#         formigueiro[x][y] = 1
+
+#     for _ in range(10): # insere 10 formigas
+#         x = randint(0, 49)
+#         y = randint(0, 49)
+#         formigas.append(Formiga((x,y)))
+
+#     return (formigueiro, formigas)
+
 def cria_formigueiro(size, dados=None):
-    size_formigueiro = 50 
+    size_formigueiro = 50 # cria um mapa de 50x50
     formigueiro = [[0 for i in range(size_formigueiro)] for i in range(size_formigueiro)]
     formigas = []
 
-    for _ in range(600):
+    for _ in range(400): # insere 400 itens
         x = randint(0, 49)
         y = randint(0, 49)
         if dados is None:
-            d = Dados(size, [randint(1,20) for _ in range(size)])
+            d = Dados(size, [randint(1,20) for i in range(size)])
         else:
             d = dados.pop()
-                
         while formigueiro[x][y] != 0:
             x = randint(0, 49)
             y = randint(0, 49)
@@ -119,12 +160,17 @@ def cria_formigueiro(size, dados=None):
     return (formigueiro, formigas)
 
 def read_formigueiro(size, filename):
+    # le dados bidimensionais, coloca numa lista e manda pra gerar o mapa
     valores = []
     with open(f"input/{filename}") as f:
         for line in f:
             line = (line.replace("\t"," ")).replace(",",".")
             cell = [l.rstrip('\n') for l in line.split(" ") if l != '' and l != '\n']
+            # cell = [c.replace(",",".") for c in cell]
             d = Dados(2,[float(cell[0]),float(cell[1])],int(cell[2]))
+            # print(d)
+            # print(d.attr)
+            # input()
             valores.append(d)
 
     return cria_formigueiro(size, valores)
@@ -136,6 +182,7 @@ def state_carrying(formiga: Formiga, formigueiro, possible_moves, a=None, k2=Non
     # lista de células cadidatas a receber o corpo que a formiga está carregando
     candidates = [] 
 
+    # direções possíveis de movimento
     for i,j in possible_moves:
         x, y = pos_x+i, pos_y+j
         
