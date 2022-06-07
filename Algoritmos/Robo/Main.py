@@ -40,10 +40,15 @@ def check_resume():
 
     return True
 
-def main_loop(simMap):
+def main_loop():
     
     pause = False
     end = False
+
+    simulationMap = Logic.load_map()
+    factoryList   = Logic.generate_factories(simulationMap)
+    itemList      = Logic.generate_items(simulationMap)
+    robot         = Logic.Robo((randint(0,41), randint(0,41)))
 
     # for x in range(42):
     #     for y in range(42):
@@ -61,7 +66,7 @@ def main_loop(simMap):
         else:
             pause = check_resume()
 
-        Render.draw(simMap, DISPLAY, width, height)
+        Render.draw(simulationMap, itemList, factoryList, robot, DISPLAY, width, height)
         pygame.display.update()
         
 def main():
@@ -69,8 +74,8 @@ def main():
     # pygame.init()
     # DISPLAY = pygame.display.set_mode((width, height), 0, 32)
     pygame.display.set_caption("Robô")
-    DISPLAY.fill((0,128,0))
-    main_loop(Logic.load_map())
+    # DISPLAY.fill((0,128,0))
+    main_loop()
 
 if __name__ == "__main__":
     main()

@@ -11,6 +11,20 @@ class Item:
         self.tipo = tipo
         self.pos = pos
     
+        if self.tipo == 0:
+            self.cor = (32,32,32)
+
+        elif self.tipo == 1:
+            self.cor = (164,0,0)
+
+        elif self.tipo == 2:
+            self.cor = (240,0,200)
+
+        elif self.tipo == 3:
+            self.cor = (0,0,200)
+        
+        else:
+            self.cor = (200,200,0)
 
 class Celula:
 
@@ -60,13 +74,59 @@ class Celula:
 
 class Fabrica:
 
+# Tipos de industrias e suas necessidades
+# 0: Indústria de melhoramento genético de grãos    | Necessita de 8 baterias
+# 1: Empresa de manutenção de cascos de embarcações | Necessita de 5 braços de solda
+# 2: Indústria petrolífera                          | Necessita de 2 bombas
+# 3: Fábrica de fundição                            | Necessita de 5 refrigeradores
+# 4: Indústria de vigas de aço                      | Necessita de 2 braços pneumáticos
+
     def __init__(self, tipo, pos, qtd=None, obj=None):
         self.tipo    = tipo
         self.pos     = pos
         self.request = (qtd, obj) # request será uma tupla (int, int), segundo int é o tipo do item
 
+        if self.tipo == 0:
+            self.cor = (198,0,198)
+
+        elif self.tipo == 1:
+            self.cor = (198,198,0)
+
+        elif self.tipo == 2:
+            self.cor = (0,198,198)
+
+        elif self.tipo == 3:
+            self.cor = (198,0,64)
+        
+        else:
+            self.cor = (0, 198, 78)
+
+
     def set_request(self, qtd: int, obj: int):
         self.request = (qtd, obj)
+
+class Robo:
+    
+    # pos => posição atual do robô
+    # target => onde o robô quer chegar
+    # contents => o que o robô está carregando, lista de ints, cada int é um tipo de item
+    # lookingAt => célula que o robô está olhando enquanto executa o A*, usado para representar a decisão dele
+    def __init__(self, pos, target=None, contents=None, lookingAt=None):
+        self.pos       = pos
+        self.target    = target if target != None else (-1,-1)
+        self.lookingAt = lookingAt if lookingAt != None else (-1,-1)
+        self.contents  = contents if contents != None else []
+        self.radius    = 4
+
+    def pick_up(self, cell: Celula):
+        # retorna True se pegou um item
+
+        if cell.contents in self.contents:
+            return False
+        else:
+            self.contents = cell.contents
+            cell.remove()
+            return True
 
 def load_map():
     simMap = []
@@ -78,31 +138,97 @@ def load_map():
             simMap.append(cell)
     return simMap
 
-def generate_factories():
+def generate_factories(simMap):
 
     factoryList = []
 
     pos = (randint(0, 41), randint(0, 41))
-    fabricaGraos = Fabrica("grao", pos, 8, 0)
+    while simMap[pos[0]][pos[1]].contents != None:
+        pos = (randint(0, 41), randint(0, 41))
+    fabricaGraos = Fabrica(0, pos, 8, 0)
+    fabricaGraos.set_request(8, 0)
+    simMap[pos[0]][pos[1]].place(fabricaGraos)
     factoryList.append(fabricaGraos)
 
     pos = (randint(0, 41), randint(0, 41))
-    fabricaBarcos = Fabrica("casco", pos, 5, 1)
+    while simMap[pos[0]][pos[1]].contents != None:
+        pos = (randint(0, 41), randint(0, 41))
+    fabricaBarcos = Fabrica(1, pos, 5, 1)
+    fabricaBarcos.set_request(5, 1)
+    simMap[pos[0]][pos[1]].place(fabricaBarcos)
     factoryList.append(fabricaBarcos)
 
     pos = (randint(0, 41), randint(0, 41))
-    fabricaPetrobras = Fabrica("petroleo", pos, 2, 2)
+    while simMap[pos[0]][pos[1]].contents != None:
+        pos = (randint(0, 41), randint(0, 41))
+    fabricaPetrobras = Fabrica(2, pos, 2, 2)
+    fabricaPetrobras.set_request(2, 2)
+    simMap[pos[0]][pos[1]].place(fabricaPetrobras)
     factoryList.append(fabricaPetrobras)
 
     pos = (randint(0, 41), randint(0, 41))
-    fabricaFundicao = Fabrica("fundicao", pos, 5, 3)
+    while simMap[pos[0]][pos[1]].contents != None:
+        pos = (randint(0, 41), randint(0, 41))
+    fabricaFundicao = Fabrica(3, pos, 5, 3)
+    fabricaFundicao.set_request(5, 3)
+    simMap[pos[0]][pos[1]].place(fabricaFundicao)
     factoryList.append(fabricaFundicao)
 
     pos = (randint(0, 41), randint(0, 41))
-    fabricaVigas = Fabrica("vigas", pos, 2, 4)
+    while simMap[pos[0]][pos[1]].contents != None:
+        pos = (randint(0, 41), randint(0, 41))
+    fabricaVigas = Fabrica(4, pos, 2, 4)
+    fabricaVigas.set_request(2, 4)
+    simMap[pos[0]][pos[1]].place(fabricaVigas)
     factoryList.append(fabricaVigas)
 
     return factoryList
 
-def generate_items():
-    pos = (randint(0, 41), randint(0, 41))
+def generate_items(simMap):
+
+    itemList = []
+
+    for _ in range(20):
+        pos = (randint(0, 41), randint(0, 41))
+        while simMap[pos[0]][pos[1]].tipo != 0 and simMap[pos[0]][pos[1]].contents != None:
+            pos = (randint(0, 41), randint(0, 41))
+        itemBateria = Item(0, pos)
+        simMap[pos[0]][pos[1]].place(itemBateria)
+        itemList.append(itemBateria)
+
+    for _ in range(10):
+        pos = (randint(0, 41), randint(0, 41))
+        while simMap[pos[0]][pos[1]].tipo != 0 and simMap[pos[0]][pos[1]].contents != None:
+            pos = (randint(0, 41), randint(0, 41))
+        itemBraco = Item(1, pos)
+        simMap[pos[0]][pos[1]].place(itemBraco)
+        itemList.append(itemBraco)
+    
+    for _ in range(8):
+        pos = (randint(0, 41), randint(0, 41))
+        while simMap[pos[0]][pos[1]].tipo != 0 and simMap[pos[0]][pos[1]].contents != None:
+            pos = (randint(0, 41), randint(0, 41))
+        itemBomba = Item(2, pos)
+        simMap[pos[0]][pos[1]].place(itemBomba)
+        itemList.append(itemBomba)
+
+    for _ in range(6):
+        pos = (randint(0, 41), randint(0, 41))
+        while simMap[pos[0]][pos[1]].tipo != 0 and simMap[pos[0]][pos[1]].contents != None:
+            pos = (randint(0, 41), randint(0, 41))
+        itemRefrigeracao = Item(3, pos)
+        simMap[pos[0]][pos[1]].place(itemRefrigeracao)
+        itemList.append(itemRefrigeracao)
+
+    for _ in range(4):
+        pos = (randint(0, 41), randint(0, 41))
+        while simMap[pos[0]][pos[1]].tipo != 0 and simMap[pos[0]][pos[1]].contents != None:
+            pos = (randint(0, 41), randint(0, 41))
+        itemBracoPneumatico = Item(4, pos)
+        simMap[pos[0]][pos[1]].place(itemBracoPneumatico)
+        itemList.append(itemBracoPneumatico)
+
+    return itemList
+
+def is_valid(pos):
+    return pos[0] >= 0 and pos[1] >= 0 and pos[0] < 42 and pos[1] < 42
