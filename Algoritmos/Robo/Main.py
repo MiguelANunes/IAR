@@ -4,9 +4,9 @@ from contextlib import redirect_stdout
 import pygame       #pip install pygame
 from pygame.locals import *
 
-import sys, os, time, Render
+import sys, os, time, Render, Logic
 
-width, height = 700,600#756, 672
+width, height = 756, 672
 pygame.init()
 DISPLAY = pygame.display.set_mode((width, height), 0, 32)
 
@@ -40,25 +40,16 @@ def check_resume():
 
     return True
 
-def load_map():
-    simMap = []
-    with open(f"inputs/input.txt") as f:
-        for line in f:
-            line = (line.replace("\t"," ")).replace(",",".")
-            cell = [l.rstrip('\n') for l in line.split(" ") if l != '' and l != '\n']
-            simMap.append(cell)
-    
-    # for x in range(42):
-    #     for y in range(42):
-    #         print(simMap[x][y], end=" ")
-    #     print()
-    # input()
-    return simMap
-
 def main_loop(simMap):
     
     pause = False
     end = False
+
+    # for x in range(42):
+    #     for y in range(42):
+    #         print(simMap[x][y].__str__(),end=" ")
+    #     print()
+    # input()
 
     while(True):
 
@@ -70,15 +61,8 @@ def main_loop(simMap):
         else:
             pause = check_resume()
 
-        # for x in range(42):
-        #     for y in range(42):
-        #         print(simMap[x][y], end=" ")
-        #     print()
-        # input()
         Render.draw(simMap, DISPLAY, width, height)
-        # for x in range(50):
-        #     for y in range(50):
-        #         pygame.draw.rect(DISPLAY, (100,100,100), (14*x,12*y,14,12))
+        pygame.display.update()
         
 def main():
 
@@ -86,8 +70,7 @@ def main():
     # DISPLAY = pygame.display.set_mode((width, height), 0, 32)
     pygame.display.set_caption("Robô")
     DISPLAY.fill((0,128,0))
-    M = load_map()
-    main_loop(M)
+    main_loop(Logic.load_map())
 
 if __name__ == "__main__":
     main()
