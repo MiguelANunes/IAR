@@ -29,18 +29,22 @@ def draw(simulationMap, itemList, factoryList, robot, DISPLAY, width, height):
     for y in range(0,672,16): # desenhando linhas horizontais separadoras
         pygame.draw.line(DISPLAY, (64,64,64), (0, y), (width, y))
 
-    if Logic.is_valid(robot.target): # marcando célula alvo do movimento do robô
-        pygame.draw.line(DISPLAY, (255,0,0), ((18*robot.target[0])-18, (16*robot.target[1])-16), ((18*robot.target[0]),    (16*robot.target[1])-16))
-        pygame.draw.line(DISPLAY, (255,0,0), ((18*robot.target[0])-18, (16*robot.target[1])-16), ((18*robot.target[0])-18, (16*robot.target[1])))
-        pygame.draw.line(DISPLAY, (255,0,0), ((18*robot.target[0])-18, (16*robot.target[1])),    ((18*robot.target[0]),    (16*robot.target[1])))
-        pygame.draw.line(DISPLAY, (255,0,0), ((18*robot.target[0]),    (16*robot.target[1])-16), ((18*robot.target[0]),    (16*robot.target[1])))
 
-    if Logic.is_valid(robot.lookingAt): # marcando células que o robô está analisando para mover
-        pygame.draw.line(DISPLAY, (255,255,255), ((18*robot.lookingAt[0])-18, (16*robot.lookingAt[1])-16), ((18*robot.lookingAt[0]),    (16*robot.lookingAt[1])-16))
-        pygame.draw.line(DISPLAY, (255,255,255), ((18*robot.lookingAt[0])-18, (16*robot.lookingAt[1])-16), ((18*robot.lookingAt[0])-18, (16*robot.lookingAt[1])))
-        pygame.draw.line(DISPLAY, (255,255,255), ((18*robot.lookingAt[0])-18, (16*robot.lookingAt[1])),    ((18*robot.lookingAt[0]),    (16*robot.lookingAt[1])))
-        pygame.draw.line(DISPLAY, (255,255,255), ((18*robot.lookingAt[0]),    (16*robot.lookingAt[1])-16), ((18*robot.lookingAt[0]),    (16*robot.lookingAt[1])))
+def drawTarget(target, DISPLAY):
+    # if Logic.is_valid(robot.target): # marcando célula alvo do movimento do robô
+    pygame.draw.line(DISPLAY, (255,0,0), ((18*target[0])-18, (16*target[1])-16), ((18*target[0]),    (16*target[1])-16))
+    pygame.draw.line(DISPLAY, (255,0,0), ((18*target[0])-18, (16*target[1])-16), ((18*target[0])-18, (16*target[1])))
+    pygame.draw.line(DISPLAY, (255,0,0), ((18*target[0])-18, (16*target[1])),    ((18*target[0]),    (16*target[1])))
+    pygame.draw.line(DISPLAY, (255,0,0), ((18*target[0]),    (16*target[1])-16), ((18*target[0]),    (16*target[1])))
 
+def drawLookingAt(lookingAt, DISPLAY):
+    # if Logic.is_valid(robot.lookingAt): # marcando células que o robô está analisando para mover
+    pygame.draw.line(DISPLAY, (255,255,255), ((18*lookingAt[0])-18, (16*lookingAt[1])-16), ((18*lookingAt[0]),    (16*lookingAt[1])-16))
+    pygame.draw.line(DISPLAY, (255,255,255), ((18*lookingAt[0])-18, (16*lookingAt[1])-16), ((18*lookingAt[0])-18, (16*lookingAt[1])))
+    pygame.draw.line(DISPLAY, (255,255,255), ((18*lookingAt[0])-18, (16*lookingAt[1])),    ((18*lookingAt[0]),    (16*lookingAt[1])))
+    pygame.draw.line(DISPLAY, (255,255,255), ((18*lookingAt[0]),    (16*lookingAt[1])-16), ((18*lookingAt[0]),    (16*lookingAt[1])))
+
+def drawPath(robot, DISPLAY):
     for cell in robot.path: # marcando as células no path selecionado pelo robô
         pygame.draw.line(DISPLAY, (255,255,0), ((18*cell[0])-18, (16*cell[1])-16), ((18*cell[0]),    (16*cell[1])-16))
         pygame.draw.line(DISPLAY, (255,255,0), ((18*cell[0])-18, (16*cell[1])-16), ((18*cell[0])-18, (16*cell[1])))

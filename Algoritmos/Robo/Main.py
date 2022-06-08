@@ -9,6 +9,7 @@ import sys, os, time, Render, Logic
 width, height = 756, 672
 pygame.init()
 DISPLAY = pygame.display.set_mode((width, height), 0, 32)
+pygame.display.set_caption("Robô")
 
 # ver distância de Manhatan
 
@@ -40,6 +41,16 @@ def check_resume():
 
     return True
 
+def simulate(robot, possible_moves, simulationMap, listItems, listFactories):
+    if robot.state == 0: # estado procurando
+        pass
+        # Logic.state_search(robot, possible_moves, simulationMap, listItems, listFactories)
+    elif robot.state == 1: # estado calculando path
+        pass
+        # Logic.state_fetch(robot, possible_moves, simulationMap, listItems, listFactories)
+    else: # estado executando path
+        pass
+
 def main_loop():
     
     pause = False
@@ -50,11 +61,10 @@ def main_loop():
     itemList      = Logic.generate_items(simulationMap)
     robot         = Logic.Robo((randint(0,41), randint(0,41)))
 
-    # for x in range(42):
-    #     for y in range(42):
-    #         print(simMap[x][y].__str__(),end=" ")
-    #     print()
-    # input()
+    possible_moves = []
+    for i in range(-1,2):
+        for j in range(-1,2):
+            possible_moves.append((i,j))
 
     while(True):
 
@@ -66,15 +76,15 @@ def main_loop():
         else:
             pause = check_resume()
 
-        Render.draw(simulationMap, itemList, factoryList, robot, DISPLAY, width, height)
         pygame.display.update()
+        Render.draw(simulationMap, itemList, factoryList, robot, DISPLAY, width, height)
         
 def main():
 
     # pygame.init()
     # DISPLAY = pygame.display.set_mode((width, height), 0, 32)
-    pygame.display.set_caption("Robô")
-    # DISPLAY.fill((0,128,0))
+    
+    
     main_loop()
 
 if __name__ == "__main__":
