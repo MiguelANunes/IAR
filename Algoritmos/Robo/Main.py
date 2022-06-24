@@ -6,10 +6,10 @@ from pygame.locals import *
 
 import sys, os, time, Render, Logic
 
-width, height = 756, 672
-pygame.init()
-DISPLAY = pygame.display.set_mode((width, height), 0, 32)
-pygame.display.set_caption("Robô")
+# width, height = 756, 672
+# pygame.init()
+# DISPLAY = pygame.display.set_mode((width, height), 0, 32)
+# pygame.display.set_caption("Robô")
 
 # ver distância de Manhatan
 
@@ -41,15 +41,14 @@ def check_resume():
 
     return True
 
-def simulate(robot, possible_moves, simulationMap, listItems, listFactories):
+def simulate(robot, possible_moves, simulationMap, itemList, factoryList):
     if robot.state == 0: # estado procurando
-        pass
-        # Logic.state_search(robot, possible_moves, simulationMap, listItems, listFactories)
+        cost = Logic.state_search(robot, possible_moves, simulationMap, itemList, factoryList)
     elif robot.state == 1: # estado calculando path
-        pass
-        # Logic.state_fetch(robot, possible_moves, simulationMap, listItems, listFactories)
+        pass # se o robô está calculando o path, não há nada para fazer aqui
+        # Logic.state_fetch(robot, possible_moves, simulationMap, itemList, factoryList)
     else: # estado executando path
-        pass
+        Logic.state_fetch(robot, simulationMap, itemList, factoryList)
 
 def main_loop():
     
@@ -61,30 +60,30 @@ def main_loop():
     itemList      = Logic.generate_items(simulationMap)
     robot         = Logic.Robo((randint(0,41), randint(0,41)))
 
-    possible_moves = []
-    for i in range(-1,2):
-        for j in range(-1,2):
-            possible_moves.append((i,j))
-
+    possible_moves = [(0,-1),(0,1),(-1,0),(1,0)]
+    # apenas se move esq/dir cima/baixo
+    
+    pygame.display.update()
+    Render.draw(simulationMap, itemList, factoryList, robot)
     while(True):
-
-        if pause == None:
-            return
 
         if not pause:
             pause = check_pause()
         else:
             pause = check_resume()
+        
+        if pause == None:
+            return
+
+        simulate(robot, possible_moves, simulationMap, itemList, factoryList)
 
         pygame.display.update()
-        Render.draw(simulationMap, itemList, factoryList, robot, DISPLAY, width, height)
+        Render.draw(simulationMap, itemList, factoryList, robot)
         
 def main():
 
-    # pygame.init()
-    # DISPLAY = pygame.display.set_mode((width, height), 0, 32)
-    
-    
+    Render.init_window()
+
     main_loop()
 
 if __name__ == "__main__":

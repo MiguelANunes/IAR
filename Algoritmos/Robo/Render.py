@@ -3,7 +3,19 @@ from pygame.locals import *
 
 import Logic
 
-def draw(simulationMap, itemList, factoryList, robot, DISPLAY, width, height):
+# TODO: Adicionar comentários de docstring para as funções
+
+
+width, height = 756, 672
+DISPLAY = None
+
+def init_window():
+    pygame.init()
+    global DISPLAY
+    DISPLAY = pygame.display.set_mode((width, height), 0, 32)
+    pygame.display.set_caption("Robô")
+
+def draw(simulationMap, itemList, factoryList, robot):#, DISPLAY, width, height):
     pos_x = 0 # linha onde vai desenhar
     for x in range(42):
         pos_y = 0 # coluna onde vai desenhar
@@ -29,24 +41,32 @@ def draw(simulationMap, itemList, factoryList, robot, DISPLAY, width, height):
     for y in range(0,672,16): # desenhando linhas horizontais separadoras
         pygame.draw.line(DISPLAY, (64,64,64), (0, y), (width, y))
 
+def draw_border(border:list):
+    # desenha uma borda branca ao redor das células que estão na fronteira do A*
+    for target in border:
+        pygame.draw.line(DISPLAY, (255,255,255), ((18*target[0])-18, (16*target[1])-16), ((18*target[0]),    (16*target[1])-16))
+        pygame.draw.line(DISPLAY, (255,255,255), ((18*target[0])-18, (16*target[1])-16), ((18*target[0])-18, (16*target[1])))
+        pygame.draw.line(DISPLAY, (255,255,255), ((18*target[0])-18, (16*target[1])),    ((18*target[0]),    (16*target[1])))
+        pygame.draw.line(DISPLAY, (255,255,255), ((18*target[0]),    (16*target[1])-16), ((18*target[0]),    (16*target[1])))
 
-def drawTarget(target, DISPLAY):
-    # if Logic.is_valid(robot.target): # marcando célula alvo do movimento do robô
-    pygame.draw.line(DISPLAY, (255,0,0), ((18*target[0])-18, (16*target[1])-16), ((18*target[0]),    (16*target[1])-16))
-    pygame.draw.line(DISPLAY, (255,0,0), ((18*target[0])-18, (16*target[1])-16), ((18*target[0])-18, (16*target[1])))
-    pygame.draw.line(DISPLAY, (255,0,0), ((18*target[0])-18, (16*target[1])),    ((18*target[0]),    (16*target[1])))
-    pygame.draw.line(DISPLAY, (255,0,0), ((18*target[0]),    (16*target[1])-16), ((18*target[0]),    (16*target[1])))
+def draw_looking_at(lookingAt):
+    # desenha uma borda amarela ao redor das células que estão sendo avaliadas pelo A*
+    pygame.draw.line(DISPLAY, (255,255,0), ((18*lookingAt[0])-18, (16*lookingAt[1])-16), ((18*lookingAt[0]),    (16*lookingAt[1])-16))
+    pygame.draw.line(DISPLAY, (255,255,0), ((18*lookingAt[0])-18, (16*lookingAt[1])-16), ((18*lookingAt[0])-18, (16*lookingAt[1])))
+    pygame.draw.line(DISPLAY, (255,255,0), ((18*lookingAt[0])-18, (16*lookingAt[1])),    ((18*lookingAt[0]),    (16*lookingAt[1])))
+    pygame.draw.line(DISPLAY, (255,255,0), ((18*lookingAt[0]),    (16*lookingAt[1])-16), ((18*lookingAt[0]),    (16*lookingAt[1])))
 
-def drawLookingAt(lookingAt, DISPLAY):
-    # if Logic.is_valid(robot.lookingAt): # marcando células que o robô está analisando para mover
+def erase_looking_at(lookingAt):
+    # desfaz a borda amarela ao redor da célula
     pygame.draw.line(DISPLAY, (255,255,255), ((18*lookingAt[0])-18, (16*lookingAt[1])-16), ((18*lookingAt[0]),    (16*lookingAt[1])-16))
     pygame.draw.line(DISPLAY, (255,255,255), ((18*lookingAt[0])-18, (16*lookingAt[1])-16), ((18*lookingAt[0])-18, (16*lookingAt[1])))
     pygame.draw.line(DISPLAY, (255,255,255), ((18*lookingAt[0])-18, (16*lookingAt[1])),    ((18*lookingAt[0]),    (16*lookingAt[1])))
     pygame.draw.line(DISPLAY, (255,255,255), ((18*lookingAt[0]),    (16*lookingAt[1])-16), ((18*lookingAt[0]),    (16*lookingAt[1])))
 
-def drawPath(robot, DISPLAY):
-    for cell in robot.path: # marcando as células no path selecionado pelo robô
-        pygame.draw.line(DISPLAY, (255,255,0), ((18*cell[0])-18, (16*cell[1])-16), ((18*cell[0]),    (16*cell[1])-16))
-        pygame.draw.line(DISPLAY, (255,255,0), ((18*cell[0])-18, (16*cell[1])-16), ((18*cell[0])-18, (16*cell[1])))
-        pygame.draw.line(DISPLAY, (255,255,0), ((18*cell[0])-18, (16*cell[1])),    ((18*cell[0]),    (16*cell[1])))
-        pygame.draw.line(DISPLAY, (255,255,0), ((18*cell[0]),    (16*cell[1])-16), ((18*cell[0]),    (16*cell[1])))
+def draw_path(robot):
+    # desenha uma borda vermelha ao reder das células do path escolhido pelo robô
+    for cell in robot.path: 
+        pygame.draw.line(DISPLAY, (255,0,0), ((18*cell[0])+18, (16*cell[1])+16), ((18*cell[0]),    (16*cell[1])+16))
+        pygame.draw.line(DISPLAY, (255,0,0), ((18*cell[0])+18, (16*cell[1])+16), ((18*cell[0])+18, (16*cell[1])))
+        pygame.draw.line(DISPLAY, (255,0,0), ((18*cell[0])+18, (16*cell[1])),    ((18*cell[0]),    (16*cell[1])))
+        pygame.draw.line(DISPLAY, (255,0,0), ((18*cell[0]),    (16*cell[1])+16), ((18*cell[0]),    (16*cell[1])))

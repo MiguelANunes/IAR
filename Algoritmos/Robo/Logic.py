@@ -1,7 +1,15 @@
-from random import randint, choice
 import sys
+from random import randint, choice
+from typing import Type
+import Render
 
-from Main import DISPLAY
+# from Main import DISPLAY
+
+# TODO: Mudar um pouco como é feita a ordem de operações do robô
+#       Pelo que eu entendi o robô inicialmente sabe onde estão todas as fábricas e oq querem
+#       e anda pelo mapa procurando os itens
+#       Quando acha algo que uma fábrica quer, vai até ela e entrega o item para ela
+
 
 class Item:
     # Tipos de itens:
@@ -28,15 +36,18 @@ class Item:
         
         else:
             self.cor = (200,200,0)
+    
+    def __str__(self) -> str:
+        return ">"+str(self.tipo)+" "+str(self.position)+"<"
 
 class Celula:
 
-# Tipos de Células
-# 0: Plano      (Verde)
-# 1: Montanhoso (Marrom)
-# 2: Pântano    (Azul)
-# 3: Árido      (Vermelho)
-# _: Obstáculo  (Preto)
+    # Tipos de Células
+    # 0: Plano      (Verde)
+    # 1: Montanhoso (Marrom)
+    # 2: Pântano    (Azul)
+    # 3: Árido      (Vermelho)
+    # _: Obstáculo  (Preto)
 
     def __init__(self, tipo, position=None, contents=None):
         self.tipo     = tipo
@@ -78,12 +89,12 @@ class Celula:
 
 class Fabrica:
 
-# Tipos de industrias e suas necessidades
-# 0: Indústria de melhoramento genético de grãos    | Necessita de 8 baterias
-# 1: Empresa de manutenção de cascos de embarcações | Necessita de 5 braços de solda
-# 2: Indústria petrolífera                          | Necessita de 2 bombas
-# 3: Fábrica de fundição                            | Necessita de 5 refrigeradores
-# 4: Indústria de vigas de aço                      | Necessita de 2 braços pneumáticos
+    # Tipos de industrias e suas necessidades
+    # 0: Indústria de melhoramento genético de grãos    | Necessita de 8 baterias
+    # 1: Empresa de manutenção de cascos de embarcações | Necessita de 5 braços de solda
+    # 2: Indústria petrolífera                          | Necessita de 2 bombas
+    # 3: Fábrica de fundição                            | Necessita de 5 refrigeradores
+    # 4: Indústria de vigas de aço                      | Necessita de 2 braços pneumáticos
 
     def __init__(self, tipo, pos, qtd=None, obj=None):
         self.tipo    = tipo
@@ -108,8 +119,18 @@ class Fabrica:
     def set_request(self, qtd: int, obj: int):
         self.request = (qtd, obj)
 
+    def deliver(self):
+        result = self.request[0]-1
+        if result > 0:
+            self.request = (result, self.request[1])
+        else:
+            self.request = (-1,-1)
+            # TODO: Tratar o caso em que a request é None
+
 class Robo:
     
+    # TODO: Salvar no robô as informações das fábricas
+
     # position => posição atual do robô
     # pastPos => ultima posição do robô
     # target => onde o robô quer chegar
@@ -119,16 +140,14 @@ class Robo:
     # radius => raio de visão do robô
 
     # estado:
-    #   0: movendo aleatóriamente, procurando por algo
-    #   1: calculando path pra algum objeto
-    #   2: path calculado, movendo para o objeto
-    def __init__(self, pos, target=None, contents=None, lookingAt=None):
+    #   0: movendo aleatóriamente, procurando por algo (0 -> 1, 0 -> 2)
+    #   1: calculando path pra algum objeto (1 -> 0)
+    #   2: path calculado, seguindo ele até o objeto (2 -> 0)
+    def __init__(self, pos):
         self.position  = pos
         self.pastPos   = (-1,-1)
-        self.target    = target if target != None else (-1,-1)
-        self.lookingAt = lookingAt if lookingAt != None else (-1,-1)
-        self.path      = []
-        self.contents  = contents if contents != None else []
+        self.path      = None
+        self.contents  = []
         self.state     = 0
         self.radius    = 4
 
@@ -138,7 +157,7 @@ class Robo:
         if cell.contents in self.contents:
             return False
         else:
-            self.contents = cell.contents
+            self.contents.append(cell.contents)
             cell.remove()
             return True
 
@@ -146,30 +165,45 @@ class Robo:
         self.pastPos  = self.position
         self.position = newPos
 
-    def follow_path(self):
-        # retorna a célula para onde moveu
-        target = self.path.pop(0)
-        self.move_to(target)
-        return target
-
     def change_state(self, newState):
         self.state = newState
+    
+    def drop(self, item):
+        del self.contents[self.contents.index(item)]
 
 class PriorityQueue:
     # uma implementação boba porém simples de fila de prioridade minima
-    def __init__(self, startList=None):
-        self.queue = startList if startList != None else []
+    def __init__(self, startcell=None, startWeight=None):
+        weight    = startWeight if startWeight != None else -1
+        temp_cell = startcell if startcell != None else (-1,-1)
 
-    def push(self, item):
-        self.queue.append(item)
+        if is_valid(temp_cell) and weight >= 0:
+            self.queue = [(weight, temp_cell)]
+        else:
+            self.queue = []
+
+    def __str__(self) -> str:
+        return str(self.queue)
+
+    def to_list(self) -> list:
+        returnList = []
+        for q in self.queue:
+            returnList.append(q[1])
+        return returnList
+
+    def push(self, weight, cell):
+        self.queue.append((weight, cell))
+
+    def len(self):
+        return len(self.queue)
 
     def pop(self):
         try:
             minCost = 0
             for i in range(len(self.queue)):
-                if self.queue[i].cost <= self.queue[minCost].cost:
+                if self.queue[i][0] <= self.queue[minCost][0]:
                     minCost = i
-            result = self.queue[minCost]
+            result = self.queue[minCost] # retorna o par (custo, célula)
             del self.queue[minCost]
             return result
 
@@ -296,6 +330,9 @@ def is_valid(pos):
 def state_search(robot, possible_moves, simulationMap, listItems, listFactories):
     # procura por algo, se não acha nada faz um movimento aleatório
 
+    # TODO: Mudar maneira que lido com a busca de itens,
+    # Colocar todos numa lista e então fazer 
+
     posX, posY = robot.position
     raio = robot.radius
 
@@ -303,30 +340,77 @@ def state_search(robot, possible_moves, simulationMap, listItems, listFactories)
         for j in range(-raio, raio+1):
             x, y = posX+i, posY+j
             
+            if not is_valid((x,y)):
+                continue
+
             if simulationMap[x][y].is_obstacle():
                 # ignora os obstaculos
                 continue
             
             if simulationMap[x][y].contents != None:
                 # se achou alguma coisa no mapa
-                object = simulationMap[x][y].contents
+                item = simulationMap[x][y].contents
 
-                if object in listItems and not object in robot.contents:
+                if item in listItems and not item in robot.contents:
                     # se achou um item que não está carregando, vai buscar ele
                     robot.change_state(1)
-                    state_path(robot, (x,y), simulationMap, listItems, listFactories)
-                    return
+                    pathCost = state_find_path(robot, (x,y), possible_moves, simulationMap)
+                    robot.change_state(2)
+                    return pathCost
+                    # continue
                 
-                if object in listFactories:
+                if item in listFactories:
                     # se achou uma fábrica, testa para ver se tem o item que quer
-                    if object.request[0] > 0 and object.request[1] in robot.contents:
+                    if item.request[0] > 0 and item.request[1] in robot.contents:
                         # se tem o que quer, vai entregar
-                        robot.change_state(1)
-                        state_path(robot, (x,y), simulationMap, listItems, listFactories)
-                        return
+                        # robot.change_state(1)
+                        # robot.path = state_find_path(robot, (x,y), simulationMap, listItems, listFactories)
+                        # robot.change_state(2)
+                        # return
+                        continue
     
     # se chegou aqui é pq não achou nada, logo faz um movimento aleatório
     random_move(robot, possible_moves, simulationMap)
+
+def state_find_path(robot, targetPos, possible_moves, simulationMap):
+    result = AStar(robot.position, targetPos, possible_moves, simulationMap)
+
+    if result != None:
+        path, cost = result
+    else:
+        return None
+
+    robot.path = path
+    return cost
+
+def state_fetch(robot, simulationMap, listItems, listFactories):
+    if not isinstance(robot.path, list) or robot.path == []:
+        robot.change_state(0)
+        return
+
+    Render.draw_path(robot)
+    Render.pygame.display.update()
+
+    new_pos = robot.path.pop(0)
+
+    i = 0
+    while i < 5_000_000:
+        i += 1
+
+    robot.move_to(new_pos)
+
+    if robot.path == []:
+        robot.path = None
+        cell = simulationMap[new_pos[0]][new_pos[1]]
+        if cell.contents in listFactories: # se achou uma fábrica
+            factory = listFactories.index(cell.contents)
+            factory.deliver()
+            robot.drop()
+            robot.change_state(0)
+        else:
+            del listItems[listItems.index(cell.contents)]
+            robot.pick_up(cell)
+            robot.change_state(0)
 
 def random_move(robot, possible_moves, simulationMap):
     posX, posY = robot.position
@@ -345,80 +429,111 @@ def random_move(robot, possible_moves, simulationMap):
     while move == robot.pastPos or move == robot.position:
         move = choice(candidates)
     
+    i = 0
+    while i < 2_000_000:
+        i += 1
+
     robot.move_to(move)
 
 # fazer funções para desenhar as células que estão sendo avaliadas 
 # e chamar elas de dentro desta função
 
-def state_path(robot, possible_moves, target, simulationMap, listItems, listFactories):
-    posX, posY = robot.position
+def distancia(pos1, pos2): # distância de Manhattan
+    return abs(pos1[0]-pos2[0]) + abs(pos1[1]-pos2[1])
 
-    # lista de células visitadas pelo algoritmo
-    visited = [[False for _ in range(42)] for _ in range(42)]
-    visited[posX][posY] = True
+def AStar(startingPos:tuple, target:tuple, possible_moves:list, simulationMap):
+    # implementação do A*
+    # Dada duas células quaisquer, calcula o caminho de menor custo entre elas, se ele existir
 
-    traverseQueue = PriorityQueue([simulationMap[posX][posY]])
-    # inicialmente, a célula atual do robô está visitada
+    fronteira = PriorityQueue(startingPos, 0) # fila de células que o robô vai checar e custo para chegar lá
+    caminho = dict() # dict de célula p/ células, caminho[(x,y)] = (x1,y1) ==> melhor caminho para (x,y) é de (x1,y1)
+    caminho[startingPos] = None # não há caminho para a célula inicial
+    custos = dict() # custo p/ chegar em celulas, custos[(x,y)] = n ==> custo para chegar em (x,y) é n
+    custos[startingPos] = 0
 
-    path = [[None for _ in range(42)] for _ in range(42)]
-    # caminho do robô no mapa
+    # testa_limite = lambda n, p : p - robot.radius < n < p + robot.radius
+    while fronteira.len() > 0:
 
-    raio = 4
+        i = 0 # artificalmente atrasando o algoritmo para ficar mais visivel
+        while i < 2_000_000:
+            i += 1
 
-    while len(traverseQueue) > 0 and raio > 0:
-        head = traverseQueue.pop().position
+        Render.draw_border(fronteira.to_list())
+        Render.pygame.display.update()
+        _, posicao_atual = fronteira.pop()
 
-        # aqui no meio vai ter a parte heurística do A*
-        for i in range(-1, 2):
-            for j in range(-1, 2):
-                x, y = i+head[0], j+head[1]
+        if posicao_atual == target:
+            # se achou o alvo, sai do loop e retornar uma tupla contendo o path e o custo total desse path
+            return (rebuildPath(caminho, target, startingPos), custos[posicao_atual] + simulationMap[target[0]][target[1]].cost)
 
-                if x == 0 and y == 0:
-                    continue # não me interessa a célula que ele está
+        vizinhos = []
+        for i in possible_moves: # gerando todos os vizinhos do nó atual
+            v = posicao_atual[0]+i[0],posicao_atual[1]+i[1]
+            if not is_valid(v):
+                continue
+            # testa_limite(v[0], inicialX) and testa_limite(v[1], inicialY) and
+            if not simulationMap[v[0]][v[1]].is_obstacle():
+                vizinhos.append(v) # não insere vizinhos mais distantes que 4 células ou vizinhos que são obstáculos
+        
+        for vizinho in vizinhos:
 
-                if not is_valid((x,y)):
-                    continue
+            # if ultimoVizinho != None:
+            #     Render.erase_looking_at(ultimoVizinho)
+            #     Render.pygame.display.update()
 
-                if visited[x][y]:
-                    continue
-                
-                if (x, y) == target:
-                    # se achou onde queria chegar
-                    path[x][y] = (x-i, y-j)
-                    return rebuildPath(path, robot.position, target)
-                
-                if not simulationMap[x][y].is_obstacle() and not visited[x][y]:
-                    # se achou uma célula válida
-                    path[x][y] = (x-i, y-j)
-                    visited[x][y] = True
-                    traverseQueue.push(simulationMap[x][y])
-        raio -= 1
-                
+            # Render.draw_looking_at(vizinho)
+            # Render.pygame.display.update()
+            novo_custo = custos[posicao_atual] + simulationMap[vizinho[0]][vizinho[1]].cost
+            swap = False
+
+            if vizinho in custos: 
+                # não posso deixar a condição do if da linha de baixo no if vizinhos not in custos
+                # pois isso pode causar um KeyError caso vizinho de fato não esteja em custos
+                # pelo mesmo motivo, não posso juntar esses dois if's num só
+                if novo_custo < custos[vizinho]: 
+                    swap = True
+
+            if vizinho not in custos or swap:
+                custos[vizinho] = novo_custo
+                fronteira.push((novo_custo + distancia(target, vizinho)), vizinho)
+                caminho[vizinho] = posicao_atual
+
     return None
 
 def rebuildPath(path, orig, dest):
     
-    # path é uma matriz de mesmo tamanho do mapa
-    # cada célula [x][y] contém as coordenadas da célula (xi,yi) onde (xi,yi) 
-    # é o caminho escolhido para chegar em (x,y)
-    # orig é onde o caminho irá iniciar, isto é, o destino do robô no mapa
-    # dest é onde o caminho irá terminar, isto é, o posição atual do robô no mapa
+    # começando pela célula onde o A* terminou, reconstrói o caminho do robo no mapa
 
-    target = path[dest[0]][dest[1]]
+    # caminho = dict() # dict de célula p/ células, caminho[(x,y)] = (x1,y1) ==> melhor caminho para (x,y) é de (x1,y1)
+    # caminho[posicaoInicial] = None # não há caminho para a célula inicial
+
+    target = path[orig]
     i, j = target
-    finalPath = [target]
+    finalPath = [orig,target]
 
     if orig == target:
         return finalPath
 
-    while path[i][j] != orig:
-        finalPath.append(path[i][j])
+    while path[(i,j)] != dest:
+        finalPath.append(path[(i,j)])
+        if path[(i,j)] == None:
+            continue
+        i, j = path[(i,j)]
+        # try: #Creio que isso foi arrumado
+        #     i, j = path[(i,j)]
+        # except TypeError:
+        #     print(orig, dest)
+        #     for p in path:
+        #         print(p,"->",path[p])
+        #     for f in finalPath:
+        #         print(f)
+        #     input()
+    finalPath.append(dest)
 
-        if path[i][j] != None:
-            i, j = path[i][j]
     finalPath.reverse()
 
     return finalPath
+    
 
-def state_fetch(robot, simulationMap, listItems, listFactories):
-    pass
+# O robô tem a informação da posição das fábricas
+# As ferramentas devem sempre estar em locais de grama
