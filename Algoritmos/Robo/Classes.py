@@ -1,6 +1,8 @@
 import sys
 import Logic
 
+# TODO: Colocar atributo de names para as fábricas e itens
+
 class Item:
     # Tipos de itens:
     # 0: Bateria de carga elétrica;
@@ -13,22 +15,27 @@ class Item:
         self.position = pos
     
         if self.tipo == 0:
-            self.cor = (64,0,64) # Roxo Escuro
+            self.name = "Bateria"
+            self.color = (64,0,64) # Roxo Escuro
 
         elif self.tipo == 1:
-            self.cor = (100,100,0) # Amarelo Escuro
+            self.name = "Braço Solda"
+            self.color = (100,100,0) # Amarelo Escuro
 
         elif self.tipo == 2:
-            self.cor = (0,100,100) # Azul Não Muito Escuro
+            self.name = "Bomba"
+            self.color = (0,100,100) # Azul Não Muito Escuro
 
         elif self.tipo == 3:
-            self.cor = (150,0,100) # Rosa escuro
+            self.name = "Refrigerador"
+            self.color = (150,0,100) # Rosa escuro
         
         else:
-            self.cor = (0,100,0) # Verde escuro
+            self.name = "Braço Pneumatico"
+            self.color = (0,100,0) # Verde escuro
     
     def __str__(self) -> str:
-        return "{"+str(self.tipo)+";"+str(self.position)+"}"
+        return "{"+self.name+": "+str(self.position)+"}"
 
     def __repr__(self) -> str:
         return str(self)
@@ -49,23 +56,23 @@ class Celula:
 
         if self.tipo == 0:
             self.cost = 1
-            self.cor  = (0, 128, 0) # Verde
+            self.color  = (0, 128, 0) # Verde
 
         elif self.tipo == 1:
             self.cost = 5
-            self.cor  = (96, 48, 12) # Marrom
+            self.color  = (96, 48, 12) # Marrom
 
         elif self.tipo == 2:
             self.cost = 10
-            self.cor  = (0, 0, 128) # Azul
+            self.color  = (0, 0, 128) # Azul
 
         elif self.tipo == 3:
             self.cost = 15
-            self.cor  = (128, 0, 0) # Vermelho
+            self.color  = (128, 0, 0) # Vermelho
         
         else:
             self.cost = -1
-            self.cor  = (0, 0, 0) # Preto
+            self.color  = (0, 0, 0) # Preto
 
     def place(self, obj):
         self.contents = obj
@@ -95,19 +102,30 @@ class Fabrica:
         self.request  = (qtd, obj) # request será uma tupla (int, int), segundo int é o tipo do item
 
         if self.tipo == 0:
-            self.cor = (198,0,198) # Rosa
+            self.name = "Grãos"
+            self.color  = (198,0,198) # Rosa
 
         elif self.tipo == 1:
-            self.cor = (198,198,0) # Amarelo
+            self.name = "Blohm und Voß"
+            self.color  = (198,198,0) # Amarelo
 
         elif self.tipo == 2:
-            self.cor = (0,198,198) # Azul Claro
+            self.name = "Petrobras"
+            self.color = (0,198,198) # Azul Claro
 
         elif self.tipo == 3:
-            self.cor = (198,0,64) # Bordô
+            self.name = "Fundição Tupy"
+            self.color  = (198,0,64) # Bordô
         
         else:
-            self.cor = (0, 198, 78) # Verde Claro
+            self.name = "Gerdau"
+            self.color  = (0, 198, 78) # Verde Claro
+
+    def __str__(self) -> str:
+        return "{"+self.name+": "+str(self.position)+"}"
+
+    def __repr__(self) -> str:
+        return str(self)
 
     def set_request(self, qtd: int, obj: int):
         self.request = (qtd, obj)
@@ -125,8 +143,6 @@ class Robo:
 
     # position => posição atual do robô
     # pastPos => ultima posição do robô
-    # target => onde o robô quer chegar
-    # lookingAt => célula que o robô está olhando enquanto executa o A*, usado para representar a decisão dele
     # path => caminho que o robô calculou com o A*
     # contents => o que o robô está carregando, lista de ints, cada int é um tipo de item
     # radius => raio de visão do robô
@@ -135,13 +151,13 @@ class Robo:
     #   0: movendo aleatóriamente, procurando por algo (0 -> 1, 0 -> 2)
     #   1: calculando path pra algum objeto (1 -> 0)
     #   2: path calculado, seguindo ele até o objeto (2 -> 0)
-    def __init__(self, pos):
-        self.position  = pos
-        self.pastPos   = (-1,-1)
-        self.path      = None
-        self.contents  = []
-        self.state     = 0
-        self.radius    = 4
+    def __init__(self, pos:tuple):
+        self.position = pos
+        self.pastPos  = (-1,-1)
+        self.path     = None
+        self.contents = []
+        self.state    = 0
+        self.radius   = 4
 
     def pick_up(self, cell: Celula):
         # retorna True se pegou um item

@@ -1,11 +1,19 @@
-from random import randint, choice
-import Render
+from random import choice, randint
+
+import Render, Main
 from Classes import *
 
 # TODO: Mudar um pouco como é feita a ordem de operações do robô
 #       Pelo que eu entendi o robô inicialmente sabe onde estão todas as fábricas e oq querem
 #       e anda pelo mapa procurando os itens
 #       Quando acha algo que uma fábrica quer, vai até ela e entrega o item para ela
+
+# TODO: Sobre condição de parada do programa
+#       Colocar uma lista de fábricas no robô
+#       Toda vez que uma fábrica tem sua request satisfeita, ela é removida da lista
+#       Programa para quando a lista estiver vazia
+
+# TODO: Printar no terminal que item o robo pegou/para qual fabrica entregou quando o fizer
 
 def load_map():
     simulationMap = []
@@ -38,109 +46,186 @@ def load_factories():
     Lê um arquivo que contém várias linhas seguindo o formato
         tipo, x, y
     Define que a fabrica de tipo 'tipo' estará nas coordenadas (x,y)
+    Retorna um dict da forma tipo: (x, y)
     """
     try:
         with open("inputs/fabrica.txt") as f:
-            factories = []
+            factories = {}
             for line in f:
-                factories.append(tuple(map(int, (line.rstrip('\n').replace(" ","")).split(","))))
+                line = list(map(int, (line.rstrip('\n').replace(" ","")).split(",")))
+                factories[line[0]] = (line[1],line[2])
             return factories
     except OSError:
         return None
 
-def generate_factories(simulationMap, ignore:list=None):
+def generate_factories(simulationMap:list, robotPos:tuple, ignore:dict=None) -> list:
+    """
+    Gera fábricas e dispões elas aleatóriamente pelo mapa
+    Opcionalmente recebe um dict de de fábricas que não precisam de posição aleatória
+        pois sua posição foi definida num arquivo
+    Receba a posição inicial do robô e não coloca nenhuma fábrica naquela célula
+    Retorna uma lista contendo todas as fábricas
+    """
+
+    if ignore == None:
+        ignore = {}
 
     factoryList = []
 
-    pos = (randint(0, 41), randint(0, 41))
-    while simulationMap[pos[0]][pos[1]].contents != None:
-        pos = (randint(0, 41), randint(0, 41))
-    fabricaGraos = Fabrica(0, pos, 8, 0)
+    # Condição para uma possível posição ser descartada
+    # Já tem algo naquela célula
+    # Ou a célula é um obstáculo
+    # Ou o robô está lá
+    condition = lambda x, y: simulationMap[x][y].contents != None or simulationMap[x][y].is_obstacle() or (x,y) == robotPos
+
+    if not 0 in ignore:
+        posX,posY = (randint(0, 41), randint(0, 41))
+        while condition(posX,posY):
+            posX,posY = (randint(0, 41), randint(0, 41))
+    else:
+        posX,posY = ignore[0]
+
+    fabricaGraos = Fabrica(0, (posX,posY), 8, 0)
     fabricaGraos.set_request(8, 0)
-    simulationMap[pos[0]][pos[1]].place(fabricaGraos)
+    simulationMap[posX][posX].place(fabricaGraos)
     factoryList.append(fabricaGraos)
 
-    pos = (randint(0, 41), randint(0, 41))
-    while simulationMap[pos[0]][pos[1]].contents != None:
-        pos = (randint(0, 41), randint(0, 41))
-    fabricaBarcos = Fabrica(1, pos, 5, 1)
+    if not 1 in ignore:
+        posX,posY = (randint(0, 41), randint(0, 41))
+        while condition(posX,posY):
+            posX,posY = (randint(0, 41), randint(0, 41))
+    else:
+        posX,posY = ignore[1]
+
+    fabricaBarcos = Fabrica(1, (posX,posY), 5, 1)
     fabricaBarcos.set_request(5, 1)
-    simulationMap[pos[0]][pos[1]].place(fabricaBarcos)
+    simulationMap[posX][posY].place(fabricaBarcos)
     factoryList.append(fabricaBarcos)
 
-    pos = (randint(0, 41), randint(0, 41))
-    while simulationMap[pos[0]][pos[1]].contents != None:
-        pos = (randint(0, 41), randint(0, 41))
-    fabricaPetrobras = Fabrica(2, pos, 2, 2)
+    if not 2 in ignore:
+        posX,posY = (randint(0, 41), randint(0, 41))
+        while condition(posX,posY):
+            posX,posY = (randint(0, 41), randint(0, 41))
+    else:
+        posX,posY = ignore[2]
+
+    fabricaPetrobras = Fabrica(2, (posX,posY), 2, 2)
     fabricaPetrobras.set_request(2, 2)
-    simulationMap[pos[0]][pos[1]].place(fabricaPetrobras)
+    simulationMap[posX][posY].place(fabricaPetrobras)
     factoryList.append(fabricaPetrobras)
 
-    pos = (randint(0, 41), randint(0, 41))
-    while simulationMap[pos[0]][pos[1]].contents != None:
-        pos = (randint(0, 41), randint(0, 41))
-    fabricaFundicao = Fabrica(3, pos, 5, 3)
+    if not 3 in ignore:
+        posX,posY = (randint(0, 41), randint(0, 41))
+        while condition(posX,posY):
+            posX,posY = (randint(0, 41), randint(0, 41))
+    else:
+        posX,posY = ignore[3]
+
+    fabricaFundicao = Fabrica(3, (posX,posY), 5, 3)
     fabricaFundicao.set_request(5, 3)
-    simulationMap[pos[0]][pos[1]].place(fabricaFundicao)
+    simulationMap[posX][posY].place(fabricaFundicao)
     factoryList.append(fabricaFundicao)
 
-    pos = (randint(0, 41), randint(0, 41))
-    while simulationMap[pos[0]][pos[1]].contents != None:
-        pos = (randint(0, 41), randint(0, 41))
-    fabricaVigas = Fabrica(4, pos, 2, 4)
+    if not 4 in ignore:
+        posX,posY = (randint(0, 41), randint(0, 41))
+        while condition(posX,posY):
+            posX,posY = (randint(0, 41), randint(0, 41))
+    else:
+        posX,posY = ignore[4]
+
+    fabricaVigas = Fabrica(4, (posX,posY), 2, 4)
     fabricaVigas.set_request(2, 4)
-    simulationMap[pos[0]][pos[1]].place(fabricaVigas)
+    simulationMap[posX][posY].place(fabricaVigas)
     factoryList.append(fabricaVigas)
 
     return factoryList
 
-def generate_items(simulationMap):
+def generate_items(simulationMap:list, robotPos:tuple):
+    """
+    Gera os itens para a simulação
+    Dado o mapa e a posição do robô, insere os itens pedidos na descrição do trabalho 
+        apenas em células de grama que não estão ocupadas pelo robô e que já não tem algo nelas
+    Retorna uma lista contendo todos os itens
+    """
 
     itemList = []
 
+    # Condição para uma possível posição ser descartada
+    # Ou a célula do mapa naquela posição não é de grama
+    # Ou já tem algo naquela célula
+    # Ou o robô está lá
+    condition = lambda x, y: simulationMap[x][y].tipo != 0 or simulationMap[x][y].contents != None or (x,y) == robotPos
+
     for _ in range(20):
-        pos = (randint(0, 41), randint(0, 41))
-        while simulationMap[pos[0]][pos[1]].tipo != 0 or simulationMap[pos[0]][pos[1]].contents != None:
-            pos = (randint(0, 41), randint(0, 41))
-        itemBateria = Item(0, pos)
-        simulationMap[pos[0]][pos[1]].place(itemBateria)
+        posX, posY = (randint(0, 41), randint(0, 41))
+        while condition(posX, posY):
+            posX, posY = (randint(0, 41), randint(0, 41))
+        itemBateria = Item(0, (posX, posY))
+        simulationMap[posX][posY].place(itemBateria)
         itemList.append(itemBateria)
 
     for _ in range(10):
-        pos = (randint(0, 41), randint(0, 41))
-        while simulationMap[pos[0]][pos[1]].tipo != 0 or simulationMap[pos[0]][pos[1]].contents != None:
-            pos = (randint(0, 41), randint(0, 41))
-        itemBraco = Item(1, pos)
-        simulationMap[pos[0]][pos[1]].place(itemBraco)
+        posX, posY = (randint(0, 41), randint(0, 41))
+        while condition(posX, posY):
+            posX, posY = (randint(0, 41), randint(0, 41))
+        itemBraco = Item(1, (posX, posY))
+        simulationMap[posX][posY].place(itemBraco)
         itemList.append(itemBraco)
     
     for _ in range(8):
-        pos = (randint(0, 41), randint(0, 41))
-        while simulationMap[pos[0]][pos[1]].tipo != 0 or simulationMap[pos[0]][pos[1]].contents != None:
-            pos = (randint(0, 41), randint(0, 41))
-        itemBomba = Item(2, pos)
-        simulationMap[pos[0]][pos[1]].place(itemBomba)
+        posX, posY = (randint(0, 41), randint(0, 41))
+        while condition(posX, posY):
+            posX, posY = (randint(0, 41), randint(0, 41))
+        itemBomba = Item(2, (posX, posY))
+        simulationMap[posX][posY].place(itemBomba)
         itemList.append(itemBomba)
 
     for _ in range(6):
-        pos = (randint(0, 41), randint(0, 41))
-        while simulationMap[pos[0]][pos[1]].tipo != 0 or simulationMap[pos[0]][pos[1]].contents != None:
-            pos = (randint(0, 41), randint(0, 41))
-        itemRefrigeracao = Item(3, pos)
-        simulationMap[pos[0]][pos[1]].place(itemRefrigeracao)
+        posX, posY = (randint(0, 41), randint(0, 41))
+        while condition(posX, posY):
+            posX, posY = (randint(0, 41), randint(0, 41))
+        itemRefrigeracao = Item(3, (posX, posY))
+        simulationMap[posX][posY].place(itemRefrigeracao)
         itemList.append(itemRefrigeracao)
 
     for _ in range(4):
-        pos = (randint(0, 41), randint(0, 41))
-        while simulationMap[pos[0]][pos[1]].tipo != 0 or simulationMap[pos[0]][pos[1]].contents != None:
-            pos = (randint(0, 41), randint(0, 41))
-        itemBracoPneumatico = Item(4, pos)
-        simulationMap[pos[0]][pos[1]].place(itemBracoPneumatico)
+        posX, posY = (randint(0, 41), randint(0, 41))
+        while condition(posX, posY):
+            posX, posY = (randint(0, 41), randint(0, 41))
+        itemBracoPneumatico = Item(4, (posX, posY))
+        simulationMap[posX][posY].place(itemBracoPneumatico)
         itemList.append(itemBracoPneumatico)
 
     return itemList
 
-def is_valid(pos):
+def generate_robot(simulationMap:list, position:tuple=None):
+    """
+    Gera o robô para a simulação
+    Caso uma posição inicial seja fornecida, verifica se ela é válida
+    Se não for, ou se nenhuma for fornecida, gera uma posição aleatória
+    Retorna o robô, na posição gerada ou fornecida
+    """
+
+    if position == None:
+        posX,posY = (randint(0, 41), randint(0, 41))
+        while simulationMap[posX][posY].contents != None or simulationMap[posX][posY].cost == -1:
+            posX,posY = (randint(0, 41), randint(0, 41))
+    else:
+        posX,posY = position
+
+        if simulationMap[posX][posY].contents != None or simulationMap[posX][posY].cost == -1:
+            print("A posição fornecida para o robô é inválida!")
+            print("Gerando uma posição aleatória...")
+
+            posX,posY = (randint(0, 41), randint(0, 41))
+            while simulationMap[posX][posY].contents != None or simulationMap[posX][posY].cost == -1:
+                posX,posY = (randint(0, 41), randint(0, 41))
+
+            print("Robô será colocado em",(posX,posY))
+
+    return Robo((posX,posY))
+
+def is_valid(pos:tuple):
     return pos[0] >= 0 and pos[1] >= 0 and pos[0] < 42 and pos[1] < 42
 
 def state_search(robot, possible_moves, simulationMap, listItems, listFactories):
@@ -177,8 +262,12 @@ def state_search(robot, possible_moves, simulationMap, listItems, listFactories)
                     if result != None:
                         robot.path = result[0]
                         cost = result[1]
-                        print("Custo do Caminho:",cost)
-
+                        try:
+                            print("Achou um(a)", item.name)
+                            print("Custo do Caminho:",cost)
+                        except IndexError:
+                            print(robot.contents)
+                            input()
                     robot.change_state(2)
                     return cost
                 
@@ -212,6 +301,7 @@ def state_find_path(robot, targetPos, possible_moves, simulationMap):
     return (path, cost)
 
 def state_fetch(robot, simulationMap, listItems, listFactories):
+
     if not isinstance(robot.path, list) or robot.path == []:
         robot.change_state(0)
         return
@@ -276,8 +366,17 @@ def AStar(startingPos:tuple, target:tuple, possible_moves:list, simulationMap):
     custos = dict() # custo p/ chegar em celulas, custos[(x,y)] = n ==> custo para chegar em (x,y) é n
     custos[startingPos] = 0
 
-    # testa_limite = lambda n, p : p - robot.radius < n < p + robot.radius
+    pause = False
+
     while fronteira.len() > 0:
+
+        if not pause:
+            pause = Main.check_pause()
+        else:
+            pause = Main.check_resume()
+
+        if pause:
+            continue
 
         i = 0 # artificalmente atrasando o algoritmo para ficar mais visivel
         while i < 2_000_000:

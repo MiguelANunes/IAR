@@ -10,24 +10,24 @@ def init_window():
     DISPLAY = pygame.display.set_mode((width, height), 0, 32)
     pygame.display.set_caption("Robô")
 
-def draw(simulationMap, itemList, factoryList, robot):#, DISPLAY, width, height):
+def draw(simulationMap, itemList, factoryList, robot):
     pos_x = 0 # linha onde vai desenhar
     for x in range(42):
         pos_y = 0 # coluna onde vai desenhar
         for y in range(42):
-            Cor = simulationMap[x][y].cor
+            Color = simulationMap[x][y].color
             # desenhando as células do mapa
-            pygame.draw.rect(DISPLAY, Cor, (18*pos_x, 16*pos_y, 18, 16))
+            pygame.draw.rect(DISPLAY, Color, (18*pos_x, 16*pos_y, 18, 16))
             pos_y += 1
         pos_x += 1
 
     for item in itemList: # desenhando os itens
-        pygame.draw.circle(DISPLAY, item.cor, ((18*item.position[0])+9, (16*item.position[1])+8), 5)
-        pygame.draw.circle(DISPLAY, (0,0,0),  ((18*item.position[0])+9, (16*item.position[1])+8), 5, 1)
+        pygame.draw.circle(DISPLAY, item.color, ((18*item.position[0])+9, (16*item.position[1])+8), 5)
+        pygame.draw.circle(DISPLAY, (0,0,0),    ((18*item.position[0])+9, (16*item.position[1])+8), 5, 1)
 
     for factory in factoryList: # desenhando as fábricas
-        pygame.draw.rect(DISPLAY, factory.cor, ((18*factory.position[0])+3, (16*factory.position[1])+2, 14, 12))
-        pygame.draw.rect(DISPLAY, (0,0,0),     ((18*factory.position[0])+3, (16*factory.position[1])+2, 14, 12), 1)
+        pygame.draw.rect(DISPLAY, factory.color, ((18*factory.position[0])+3, (16*factory.position[1])+2, 14, 12))
+        pygame.draw.rect(DISPLAY, (0,0,0),       ((18*factory.position[0])+3, (16*factory.position[1])+2, 14, 12), 1)
 
     # desenhando o robô
     pygame.draw.rect(DISPLAY, (255,255,255), ((18*robot.position[0])+3, (16*robot.position[1])+2, 14, 12))
