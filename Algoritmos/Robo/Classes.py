@@ -80,6 +80,11 @@ class Celula:
     def is_obstacle(self):
         return self.cost == -1
 
+    def set_obstacle(self):
+        self.tipo   = -1
+        self.cost   = -1
+        self.color  = (0, 0, 0) # Preto
+
     def remove(self):
         self.contents = None
 

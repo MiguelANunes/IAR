@@ -13,12 +13,12 @@ from Classes import *
 #       Toda vez que uma fábrica tem sua request satisfeita, ela é removida da lista
 #       Programa para quando a lista estiver vazia
 
-# TODO: Printar no terminal que item o robo pegou/para qual fabrica entregou quando o fizer
+# TODO: Printar no terminal para qual fabrica o robo entregou um item
 
 def load_map():
     simulationMap = []
     with open("inputs/map.txt") as f:
-        for line in f:
+        for line in f: # TODO Melhorar isso, ver as outras funções de load
             line = (line.replace("\t"," ")).replace(",",".")
             cells = [l.rstrip('\n') for l in line.split(" ") if l != '' and l != '\n']
             cell = [Celula(int(c)) for c in cells]
@@ -55,6 +55,23 @@ def load_factories():
                 line = list(map(int, (line.rstrip('\n').replace(" ","")).split(",")))
                 factories[line[0]] = (line[1],line[2])
             return factories
+    except OSError:
+        return None
+
+def load_obstacles() -> list:
+    """
+    Lê um arquivo que contém várias linhas seguindo o formato
+        x, y
+    Define que há um obstaculo no ponto (x,y)
+    Retona uma lista de tuplas (x,y)
+    """
+    try:
+        with open("inputs/obstaculo.txt") as f:
+            obstacles = []
+            for line in f:
+                line = tuple(map(int, line.rstrip('\n').split(" ")))
+                obstacles.append(line)
+            return obstacles
     except OSError:
         return None
 
@@ -206,9 +223,14 @@ def generate_robot(simulationMap:list, position:tuple=None):
     Retorna o robô, na posição gerada ou fornecida
     """
 
+    # Condição para uma possível posição ser descartada
+    # Já tem algo naquela célula
+    # Ou a célula tem um obstáculo
+    condition = lambda x, y: simulationMap[x][y].contents != None or simulationMap[x][y].is_obstacle()
+
     if position == None:
         posX,posY = (randint(0, 41), randint(0, 41))
-        while simulationMap[posX][posY].contents != None or simulationMap[posX][posY].cost == -1:
+        while condition(posX,posY):
             posX,posY = (randint(0, 41), randint(0, 41))
     else:
         posX,posY = position
@@ -218,12 +240,85 @@ def generate_robot(simulationMap:list, position:tuple=None):
             print("Gerando uma posição aleatória...")
 
             posX,posY = (randint(0, 41), randint(0, 41))
-            while simulationMap[posX][posY].contents != None or simulationMap[posX][posY].cost == -1:
+            while condition(posX,posY):
                 posX,posY = (randint(0, 41), randint(0, 41))
 
             print("Robô será colocado em",(posX,posY))
 
     return Robo((posX,posY))
+
+def generate_obstacles(simulationMap:list, file:bool) -> None:
+    """
+    Insere obstáculo no mapa pedindo para o usário dar as coordenadas x,y do obstáculo
+    Após cada inserção, pede para o usuário confirmar que está correto
+    Desenha no mapa linhas referentes a células que tem x ou y igual ao valor fornecido
+    Repete esse processo quantas vezes o usuário quiser
+    Não retorna nada, altera o mapa durante a execução da função
+    """
+
+    while True and not file:
+
+        confirm = False
+
+        Render.draw(simulationMap, [], [])
+        Render.pygame.display.update()
+
+        while not confirm:
+            Render.draw(simulationMap, [], [])
+            Render.pygame.display.update()
+
+            possibleX = []
+            posX = int(input("Digite a coordenada X de onde quer inserir/remover o obstáculo: "))
+            for y in range(42):
+                possibleX.append((posX, y))        
+
+            Render.draw_path(possibleX)
+            Render.pygame.display.update()
+            
+            choice = input("Essa posição está correta? (y/n) ")
+            if choice.casefold() == 'y'.casefold() or choice.casefold() == 's'.casefold():
+                confirm = True
+        
+        confirm = False
+
+        while not confirm:
+            Render.draw(simulationMap, [], [])
+            Render.draw_path(possibleX)
+            Render.pygame.display.update()
+
+            possibleY = []
+            posY = int(input("Digite a coordenada Y de onde quer inserir/remover o obstáculo: "))
+            for x in range(42):
+                possibleY.append((x, posY))
+            
+            Render.draw_path(possibleY)
+            Render.pygame.display.update()
+
+            choice = input("Essa posição está correta? (y/n) ")
+            if choice.casefold() == 'y'.casefold() or choice.casefold() == 's'.casefold():
+                confirm = True
+
+        if not simulationMap[posX][posY].is_obstacle():
+            simulationMap[posX][posY].set_obstacle()
+        else: # ao remover obstáculo, célula volta a ser grama
+            simulationMap[posX][posY] = Celula(0, (posX,posY))
+
+        Render.draw(simulationMap, [], [])
+        Render.pygame.display.update()
+
+        choice = input("Adicionar mais um obstáculo? (y/n) ")
+        if choice.casefold() == 'y'.casefold() or choice.casefold() == 's'.casefold():
+            continue
+        else:
+            return
+    
+    obstacles = load_obstacles()
+    if obstacles == None:
+        print("Erro, não achei ou não consegui abrir o arquivo obstaculos.txt na pasta inputs")
+        return
+    print(obstacles)
+    for posX,posY in obstacles:
+        simulationMap[posX][posY].set_obstacle()
 
 def is_valid(pos:tuple):
     return pos[0] >= 0 and pos[1] >= 0 and pos[0] < 42 and pos[1] < 42
@@ -306,7 +401,7 @@ def state_fetch(robot, simulationMap, listItems, listFactories):
         robot.change_state(0)
         return
 
-    Render.draw_path(robot)
+    Render.draw_path(robot.path)
     Render.pygame.display.update()
 
     new_pos = robot.path.pop(0)
@@ -341,9 +436,11 @@ def random_move(robot, possible_moves, simulationMap):
             continue
         candidates.append((x,y))
     
-    # escolhendo um movimento
     move = choice(candidates)
-    while move == robot.pastPos or move == robot.position:
+    # ignora movimentos que levarariam para a posição anterior, a atual, ou para um obstáculo
+    # TODO: Sinto que isso pode causar um loop em situações onde o único movimento possível do robô é
+    #       voltar para onde ele veio, confirmar e arrumar se for o caso
+    while move == robot.pastPos or move == robot.position or simulationMap[move[0]][move[1]].is_obstacle():
         move = choice(candidates)
     
     i = 0
@@ -358,7 +455,6 @@ def distancia(pos1, pos2): # distância de Manhattan
 def AStar(startingPos:tuple, target:tuple, possible_moves:list, simulationMap):
     # implementação do A*
     # Dada duas células quaisquer, calcula o caminho de menor custo entre elas, se ele existir
-    # TODO: Melhorar esse A*, ele de fato não calcula o caminho de menor custo entre duas células quaisquer
 
     fronteira = PriorityQueue(startingPos, 0) # fila de células que o robô vai checar e custo para chegar lá
     caminho = dict() # dict de célula p/ células, caminho[(x,y)] = (x1,y1) ==> melhor caminho para (x,y) é de (x1,y1)
@@ -418,6 +514,7 @@ def AStar(startingPos:tuple, target:tuple, possible_moves:list, simulationMap):
 
 def rebuildPath(path, orig, dest):   
     # começando pela célula onde o A* terminou, reconstrói o caminho do robo no mapa
+
     target = path[orig]
     i, j = target
     finalPath = [orig,target]
@@ -425,25 +522,16 @@ def rebuildPath(path, orig, dest):
     if orig == target:
         return finalPath
 
-    noPath = False
-    while path[(i,j)] != dest: # TODO: Limpar essa bagunça
+    while path[(i,j)] != dest:
         finalPath.append(path[(i,j)])
         if path[(i,j)] == None:
-            # print(orig, dest)
-            # for p in path:
-            #     print(p,"->",path[p])
-            # for f in finalPath:
-            #     print(f)
-            # input()
-            noPath = True
-        if noPath:
             break
         i, j = path[(i,j)]
 
     finalPath.append(dest)
-
     finalPath.reverse()
 
+    # sanity check
     finalPath = [x for x in finalPath if x != None]
 
     return finalPath

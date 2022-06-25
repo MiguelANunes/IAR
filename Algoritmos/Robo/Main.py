@@ -4,7 +4,7 @@ from contextlib import redirect_stdout
 import pygame, argparse     #pip install pygame
 from pygame.locals import *
 
-import Render, Logic, Classes
+import Render, Logic
 
 # TODO: Adicionar comentários de docstring para as funções
 
@@ -106,16 +106,26 @@ def simulate(robot, possible_moves:list, simulationMap:list, itemList:list, fact
     else: # estado executando path
         Logic.state_fetch(robot, simulationMap, itemList, factoryList)
 
-def main_loop(robotPos:tuple=None,factoriesPos:list=None) -> int:
+def main_loop(robotPos:tuple=None,factoriesPos:list=None, obstacles:bool=None) -> int:
     """
     Loop principal da simulação
     Cria o mapa, fábrica, itens, robô, janela do pygame e roda a simulação em loop
     """
 
-    pause = False
+    pause = True
     end = False
 
+    Render.init_window() # inicializando a janela do pygame
+
     simulationMap = Logic.load_map()
+
+    choice = input("Inserir obstáculos? (y/n) ")
+    if choice.casefold() == 'y'.casefold() or choice.casefold() == 's'.casefold():
+        if obstacles: # inserindo os obstáculos no mapa
+            choice = input("Ler obstáculos de um arquivo? (y/n) ")
+            file = choice.casefold() == 'y'.casefold() or choice.casefold() == 's'.casefold()
+            Logic.generate_obstacles(simulationMap, file)
+
     robot         = Logic.generate_robot(simulationMap, robotPos)
     robotPos      = robot.position
     factoryList   = Logic.generate_factories(simulationMap, robotPos, factoriesPos)
@@ -125,10 +135,13 @@ def main_loop(robotPos:tuple=None,factoriesPos:list=None) -> int:
     possible_moves = [(0,-1),(0,1),(-1,0),(1,0)]
     # apenas se move esq/dir cima/baixo
     
-    Render.init_window() # inicializando a janela do pygame
-
-    pygame.display.update()
     Render.draw(simulationMap, itemList, factoryList, robot)
+    pygame.display.update()
+    print("")
+    print("")
+    print("***********")
+    print("Aperte espaço para pausar/despausar")
+    print("Aperte escape para sair")
     while(True):
         
         if not pause:
@@ -144,12 +157,11 @@ def main_loop(robotPos:tuple=None,factoriesPos:list=None) -> int:
             if cost != None:
                 totalCost += cost
 
-            pygame.display.update()
             Render.draw(simulationMap, itemList, factoryList, robot)
+            pygame.display.update()
 
 def main() -> None:
 
-    # exec_args = dict()
     robotPos  = None
     factories = None
 
@@ -157,19 +169,19 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("-R", "--noRobot", help="Pula leitura de posição do robô", 
     action="store_true", dest="readRobot")
-    parser.add_argument("-F", "--nofactory", help="Pula leitura de posição das fábricas", 
+    parser.add_argument("-F", "--noFactory", help="Pula leitura de posição das fábricas", 
     action="store_true", dest="readFactory")
+    parser.add_argument("-O", "--noObstacle", help="Pula a inserção de obstáculos", 
+    action="store_true", dest="readObstacle")
     args = parser.parse_args()
 
     if not args.readRobot:
-        robotPos = get_custom_robot_position()
+        robotPos  = get_custom_robot_position()
     if not args.readFactory:
         factories = get_custom_factory_position()
+    obstacles = not args.readObstacle
 
-
-    print("")
-    print("")
-    cost = main_loop(robotPos=robotPos, factoriesPos=factories)
+    cost = main_loop(robotPos, factories, obstacles)
 
     print("Ao fim da execução, o custo total dos caminhos percorridos pelo robô foi:",cost)
 
