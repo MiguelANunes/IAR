@@ -13,9 +13,23 @@ from Classes import *
 #       Toda vez que uma fábrica tem sua request satisfeita, ela é removida da lista
 #       Programa para quando a lista estiver vazia
 
-# TODO: Printar no terminal para qual fabrica o robo entregou um item
+
+def wait_for(ticks:int) -> None:
+    """
+    Recebe um número e faz operações inúteis para gastar tempo e artificialmente tornar o
+    algoritmo mais lento
+    Não retorna nada
+    """
+    i = 0
+    for _ in range(ticks):
+        i += 1
 
 def load_map():
+    """
+    Lê um arquivo com 42 linhas, cada uma com 42 caracteres que são as células do mapa
+    Processa essas linhas e retorna o mapa
+    """
+
     simulationMap = []
     with open("inputs/map.txt") as f:
         for line in f: # TODO Melhorar isso, ver as outras funções de load
@@ -33,6 +47,7 @@ def load_map():
 def load_robot():
     """
     Lê um arquivo que contém 2 valores, que são a posição inicial do robô
+    Retorna a posição lida
     """
     try:
         with open("inputs/robo.txt") as f:
@@ -104,7 +119,7 @@ def generate_factories(simulationMap:list, robotPos:tuple, ignore:dict=None) -> 
 
     fabricaGraos = Fabrica(0, (posX,posY), 8, 0)
     fabricaGraos.set_request(8, 0)
-    simulationMap[posX][posX].place(fabricaGraos)
+    simulationMap[posX][posY].place(fabricaGraos)
     factoryList.append(fabricaGraos)
 
     if not 1 in ignore:
@@ -255,7 +270,7 @@ def generate_obstacles(simulationMap:list, file:bool) -> None:
     Repete esse processo quantas vezes o usuário quiser
     Não retorna nada, altera o mapa durante a execução da função
     """
-
+    # TODO: Generalizar isso pra poder usar em todas as funções de inserir alguma coisa (robo, fábrica) no mapa 
     while True and not file:
 
         confirm = False
@@ -300,7 +315,7 @@ def generate_obstacles(simulationMap:list, file:bool) -> None:
 
         if not simulationMap[posX][posY].is_obstacle():
             simulationMap[posX][posY].set_obstacle()
-        else: # ao remover obstáculo, célula volta a ser grama
+        else: # ao remover obstáculo, célula se torna grama, independente doq era antes
             simulationMap[posX][posY] = Celula(0, (posX,posY))
 
         Render.draw(simulationMap, [], [])
@@ -311,30 +326,50 @@ def generate_obstacles(simulationMap:list, file:bool) -> None:
             continue
         else:
             return
-    
-    obstacles = load_obstacles()
-    if obstacles == None:
-        print("Erro, não achei ou não consegui abrir o arquivo obstaculos.txt na pasta inputs")
-        return
-    print(obstacles)
-    for posX,posY in obstacles:
-        simulationMap[posX][posY].set_obstacle()
 
 def is_valid(pos:tuple):
     return pos[0] >= 0 and pos[1] >= 0 and pos[0] < 42 and pos[1] < 42
 
-def state_search(robot, possible_moves, simulationMap, listItems, listFactories):
+def state_search(robot, possible_moves, simulationMap, listItems):
     # procura por algo, se não acha nada faz um movimento aleatório
 
     # TODO: Mudar maneira que lido com a busca de itens,
     # Ver como ele quer no pdf
-
-    # TODO: Mudar a maneira que lido com ida até as fábricas
-    # Robô deve saber onde ficam as fábricas e ir até elas quando tiver o que precisam
+    
+    # TODO: Entra em loop as vezes, talvez tenha ver com o fato que o robô tenta fazer o path até
+    # uma célula que ele já está, talvez não
 
     posX, posY = robot.position
     raio = robot.radius
 
+    # Para cada fábrica que o robô não satisfez
+    for fabrica in robot.factories:
+        x,y = fabrica.position
+
+        for tipoItem in robot.contents:
+            # Se o robô tem o item que essa fábrica quer
+            if tipoItem == fabrica.request[1] and fabrica.request[0] > 0:
+                # Vai entregar ele
+
+                nome = [x for x in listItems if x.tipo == tipoItem][0].name # isso é a coisa mais nojenta que eu já escrevi
+                print(f"Indo até a fábrica {fabrica.name} entregar {nome}")
+                # print("fabrica.request:",fabrica.request)
+                # print("robot.contents:",robot.contents)
+                # print("robot.position:",robot.position)
+                # print("fabrica.position:",fabrica.position)
+                robot.change_state(1)
+                result = state_find_path(robot, (x,y), possible_moves, simulationMap)
+
+                if result != None:
+                    robot.path = result[0]
+                    # print("Estado 0, robot.path:",robot.path)
+                    cost = result[1]
+                    print("Custo do Caminho:",cost)
+
+                robot.change_state(2)
+                return cost
+
+    positionList = []
     for i in range(-raio, raio+1):
         for j in range(-raio, raio+1):
             x, y = posX+i, posY+j
@@ -348,39 +383,35 @@ def state_search(robot, possible_moves, simulationMap, listItems, listFactories)
             if simulationMap[x][y].contents != None: # se achou alguma coisa no mapa
                 item = simulationMap[x][y].contents
 
-                if item in listItems and not item.tipo in robot.get_contents():
-                    # se achou um item que não está carregando, vai buscar ele
+                if item in listItems and not item.tipo in robot.contents:
+                    # se achou um item que não está carregando, põe ele na lista para ser buscado
+    #                 positionList.append((x,y))
+
+    # # Para cada item na lista de item a serem buscados
+    # # Veja qual o caminho de menor custo entre todos ele
+    # distancesRobo  = dict()
+    # distancesItems = dict()
+    # for pos in positionList:
+    #     distancesRobo[pos] = -1
+    #     secondaryDist = dict()
+    #     for pos1 in positionList:
+    #         if pos == pos1: continue
+    #         secondaryDist[pos1] = -1
+    #     distancesItems[pos] = secondaryDist
+    
+    
                     robot.change_state(1)
 
+                    print("Achou um(a)", item.name)
                     result = state_find_path(robot, (x,y), possible_moves, simulationMap)
 
                     if result != None:
                         robot.path = result[0]
                         cost = result[1]
-                        try:
-                            print("Achou um(a)", item.name)
-                            print("Custo do Caminho:",cost)
-                        except IndexError:
-                            print(robot.contents)
-                            input()
+                        print("Custo do Caminho:",cost)
+                        print()
                     robot.change_state(2)
                     return cost
-                
-                if item in listFactories:
-                    # se achou uma fábrica, testa para ver se tem o item que quer
-                    if item.request[0] > 0 and item.request[1] in robot.contents:
-                        # se tem o que quer, vai entregar
-                        robot.change_state(1)
-
-                        result = state_find_path(robot, (x,y), simulationMap, listItems, listFactories)
-
-                        if result != None:
-                            robot.path = result[0]
-                            cost = result[1]
-                            print("Custo do Caminho:",cost)
-
-                        robot.change_state(2)
-                        return cost
     
     # se chegou aqui é pq não achou nada, logo faz um movimento aleatório
     random_move(robot, possible_moves, simulationMap)
@@ -406,19 +437,19 @@ def state_fetch(robot, simulationMap, listItems, listFactories):
 
     new_pos = robot.path.pop(0)
 
-    i = 0
-    while i < 4_000_000:
-        i += 1
+    wait_for(500_000)
 
     robot.move_to(new_pos)
-
+    
+    # print("Estado 2, robot.path:",robot.path)
     if robot.path == []:
         robot.path = None
         cell = simulationMap[new_pos[0]][new_pos[1]]
         if cell.contents in listFactories:
-            factory = listFactories.index(cell.contents)
-            factory.deliver()
-            robot.drop()
+            # ISSO é a coisa mais nojenta que eu já escrevi
+            nome = [x for x in listItems if x.tipo == cell.contents.request[1]][0].name 
+            robot.deliver(cell.contents)
+            print(f"A fábrica {cell.contents.name} agora precisa de {cell.contents.request[0]} {nome}(s)\n")
             robot.change_state(0)
         else:
             del listItems[listItems.index(cell.contents)]
@@ -443,9 +474,7 @@ def random_move(robot, possible_moves, simulationMap):
     while move == robot.pastPos or move == robot.position or simulationMap[move[0]][move[1]].is_obstacle():
         move = choice(candidates)
     
-    i = 0
-    while i < 1_000_000:
-        i += 1
+    wait_for(500_000)
 
     robot.move_to(move)
 
@@ -474,9 +503,7 @@ def AStar(startingPos:tuple, target:tuple, possible_moves:list, simulationMap):
         if pause:
             continue
 
-        i = 0 # artificalmente atrasando o algoritmo para ficar mais visivel
-        while i < 2_000_000:
-            i += 1
+        wait_for(500_000)
 
         Render.draw_border(fronteira.to_list())
         Render.pygame.display.update()
@@ -512,16 +539,28 @@ def AStar(startingPos:tuple, target:tuple, possible_moves:list, simulationMap):
 
     return None
 
-def rebuildPath(path, orig, dest):   
+def rebuildPath(path:dict, orig:tuple, dest:tuple) -> list:   
     # começando pela célula onde o A* terminou, reconstrói o caminho do robo no mapa
 
-    target = path[orig]
-    i, j = target
-    finalPath = [orig,target]
+    if orig == dest:
+        return [orig]
+
+    try: # TODO Aqui surgiu um erro onde i, j = target da TypeError pois target é None
+        target = path[orig]
+        finalPath = [orig]
+    except TypeError:
+        print("target:",target)
+        print("orig:",orig)
+        print("dest:",dest)
+        for p in path:
+            print(p)
+        input()
 
     if orig == target:
         return finalPath
 
+    i, j = target
+    finalPath.append(target)
     while path[(i,j)] != dest:
         finalPath.append(path[(i,j)])
         if path[(i,j)] == None:

@@ -1,18 +1,9 @@
-from random import randint
-from contextlib import redirect_stdout
-
-import pygame, argparse     #pip install pygame
+import pygame, argparse, copy     #pip install pygame
 from pygame.locals import *
 
 import Render, Logic
 
 # TODO: Adicionar comentários de docstring para as funções
-
-# TODO: Sobre inserção de obstaculos: (ter pelo menos alguns desses)
-#       fazer uma entrada ou por arquivo de texto
-#       ou inserir aleatóriamente
-#       ou prompt que da highlight na linha/coluna que será inserido, 
-#       com confirmação antes de inserir
 
 def check_pause() -> bool:
     """
@@ -100,13 +91,13 @@ def simulate(robot, possible_moves:list, simulationMap:list, itemList:list, fact
     """
 
     if robot.state == 0: # estado procurando
-        return Logic.state_search(robot, possible_moves, simulationMap, itemList, factoryList)
+        return Logic.state_search(robot, possible_moves, simulationMap, itemList)
     elif robot.state == 1: # estado calculando path
         pass # se o robô está calculando o path, não há nada para fazer aqui
     else: # estado executando path
         Logic.state_fetch(robot, simulationMap, itemList, factoryList)
 
-def main_loop(robotPos:tuple=None,factoriesPos:list=None, obstacles:bool=None) -> int:
+def main_loop(robotPos:tuple=None,factoriesPos:list=None, obstacles:tuple=None) -> int:
     """
     Loop principal da simulação
     Cria o mapa, fábrica, itens, robô, janela do pygame e roda a simulação em loop
@@ -119,12 +110,22 @@ def main_loop(robotPos:tuple=None,factoriesPos:list=None, obstacles:bool=None) -
 
     simulationMap = Logic.load_map()
 
-    choice = input("Inserir obstáculos? (y/n) ")
-    if choice.casefold() == 'y'.casefold() or choice.casefold() == 's'.casefold():
-        if obstacles: # inserindo os obstáculos no mapa
+    if obstacles[0]: # inserindo os obstáculos no mapa
+        choice = input("Inserir obstáculos? (y/n) ")
+        if choice.casefold() == 'y'.casefold() or choice.casefold() == 's'.casefold():
             choice = input("Ler obstáculos de um arquivo? (y/n) ")
-            file = choice.casefold() == 'y'.casefold() or choice.casefold() == 's'.casefold()
-            Logic.generate_obstacles(simulationMap, file)
+            
+            # lendo obstaculos de um arquivo
+            if (obstacles[1] or choice.casefold() == 'y'.casefold()) and choice.casefold() != 'n'.casefold(): 
+                obstaculos = Logic.load_obstacles()
+                if obstaculos == None:
+                    print("Erro, não achei ou não consegui abrir o arquivo obstaculos.txt na pasta inputs")
+                    return
+                for posX,posY in obstaculos:
+                    simulationMap[posX][posY].set_obstacle()
+
+            else: # inserindo manualmente
+                Logic.generate_obstacles(simulationMap)
 
     robot         = Logic.generate_robot(simulationMap, robotPos)
     robotPos      = robot.position
@@ -132,16 +133,20 @@ def main_loop(robotPos:tuple=None,factoriesPos:list=None, obstacles:bool=None) -
     itemList      = Logic.generate_items(simulationMap, robotPos)
     totalCost     = 0
 
+    # passando uma cópia da lista de fábricas para o robô
+    # caso eu não faça isso, toda vez que mudar a lista do robô, também mudo a lista global
+    # e isso é muito ruim
+    robot.set_factories(copy.deepcopy(factoryList)) 
+
     possible_moves = [(0,-1),(0,1),(-1,0),(1,0)]
     # apenas se move esq/dir cima/baixo
     
     Render.draw(simulationMap, itemList, factoryList, robot)
     pygame.display.update()
-    print("")
-    print("")
-    print("***********")
-    print("Aperte espaço para pausar/despausar")
-    print("Aperte escape para sair")
+
+    print("\n***********\n")
+    print("Aperte espaço para pausar/retomar")
+    print("Aperte escape para sair\n")
     while(True):
         
         if not pause:
@@ -160,8 +165,25 @@ def main_loop(robotPos:tuple=None,factoriesPos:list=None, obstacles:bool=None) -
             Render.draw(simulationMap, itemList, factoryList, robot)
             pygame.display.update()
 
-def main() -> None:
+        if robot.factories == []:
+            return totalCost
 
+def main():
+
+    """
+    Função principal da simulação
+    Sobre os argumentos de linha de comando definidos a baixo:
+        -h printa um menu de ajuda explicando os argumentos e não executa o programa
+        -R pula a leitura da posição do robô de um arquivo
+        -F pula a leitura da posição das fábricas de um arquivo
+        -O pula a inserção de obstáculo, por linha de comando ou arquivo
+        -I insere obstáculo apenas por arquivo
+        As flags -O e -I são mutuamente exclusivas, tentar executar o programa com as duas causará erro
+    Uso dos argumentos:
+        python3 Main.py [-h | [-R] [-F] [-O | -I]]
+    """
+    # TODO: Implementar arg de linha de comando para tempo de espera
+    # TODO: Implementar arg de linha de comando que começa despausado
     robotPos  = None
     factories = None
 
@@ -172,14 +194,20 @@ def main() -> None:
     parser.add_argument("-F", "--noFactory", help="Pula leitura de posição das fábricas", 
     action="store_true", dest="readFactory")
     parser.add_argument("-O", "--noObstacle", help="Pula a inserção de obstáculos", 
-    action="store_true", dest="readObstacle")
+    action="store_true", dest="noObstacle")
+    parser.add_argument("-I", "--insertObstacle", help="Insere obstáculos a partir de um arquivo (pula inserção manual)", 
+    action="store_true", dest="insertObstacle")
     args = parser.parse_args()
+
+    if args.noObstacle and args.insertObstacle:
+        print("Erro, flags -I e -O são mutuamente exclusivas")
+        return
 
     if not args.readRobot:
         robotPos  = get_custom_robot_position()
     if not args.readFactory:
         factories = get_custom_factory_position()
-    obstacles = not args.readObstacle
+    obstacles     = (not args.noObstacle, args.insertObstacle)
 
     cost = main_loop(robotPos, factories, obstacles)
 

@@ -1,15 +1,16 @@
 import sys
 import Logic
 
-# TODO: Colocar atributo de names para as fábricas e itens
-
 class Item:
-    # Tipos de itens:
-    # 0: Bateria de carga elétrica;
-    # 1: Braço de solda;
-    # 2: Bomba de sucção;
-    # 3: Dispositivo de refrigeração;
-    # 4: Braço pneumático.
+    """
+    Tipos de itens:
+        0: Bateria de carga elétrica;
+        1: Braço de solda;
+        2: Bomba de sucção;
+        3: Dispositivo de refrigeração;
+        4: Braço pneumático.
+    """
+
     def __init__(self, tipo, pos):
         self.tipo     = tipo
         self.position = pos
@@ -19,7 +20,7 @@ class Item:
             self.color = (64,0,64) # Roxo Escuro
 
         elif self.tipo == 1:
-            self.name = "Braço Solda"
+            self.name = "Braço de Solda"
             self.color = (100,100,0) # Amarelo Escuro
 
         elif self.tipo == 2:
@@ -41,13 +42,14 @@ class Item:
         return str(self)
 
 class Celula:
-
-    # Tipos de Células
-    # 0: Plano      (Verde)
-    # 1: Montanhoso (Marrom)
-    # 2: Pântano    (Azul)
-    # 3: Árido      (Vermelho)
-    # _: Obstáculo  (Preto)
+    """
+    Tipos de Células
+        0: Plano      (Verde)
+        1: Montanhoso (Marrom)
+        2: Pântano    (Azul)
+        3: Árido      (Vermelho)
+        _: Obstáculo  (Preto)
+    """
 
     def __init__(self, tipo, position=None, contents=None):
         self.tipo     = tipo
@@ -93,13 +95,14 @@ class Celula:
         return f"{self.tipo}{c}"
 
 class Fabrica:
-
-    # Tipos de industrias e suas necessidades
-    # 0: Indústria de melhoramento genético de grãos    | Necessita de 8 baterias
-    # 1: Empresa de manutenção de cascos de embarcações | Necessita de 5 braços de solda
-    # 2: Indústria petrolífera                          | Necessita de 2 bombas
-    # 3: Fábrica de fundição                            | Necessita de 5 refrigeradores
-    # 4: Indústria de vigas de aço                      | Necessita de 2 braços pneumáticos
+    """
+    Tipos de industrias e suas necessidades
+        0: Indústria de melhoramento genético de grãos    | Necessita de 8 baterias
+        1: Empresa de manutenção de cascos de embarcações | Necessita de 5 braços de solda
+        2: Indústria petrolífera                          | Necessita de 2 bombas
+        3: Fábrica de fundição                            | Necessita de 5 refrigeradores
+        4: Indústria de vigas de aço                      | Necessita de 2 braços pneumáticos
+    """
 
     def __init__(self, tipo, pos, qtd=None, obj=None):
         self.tipo     = tipo
@@ -107,7 +110,7 @@ class Fabrica:
         self.request  = (qtd, obj) # request será uma tupla (int, int), segundo int é o tipo do item
 
         if self.tipo == 0:
-            self.name = "Grãos"
+            self.name = "Agro é Pop"
             self.color  = (198,0,198) # Rosa
 
         elif self.tipo == 1:
@@ -139,56 +142,66 @@ class Fabrica:
         result = self.request[0]-1
         if result > 0:
             self.request = (result, self.request[1])
-        else:  # TODO: Tratar o caso em que a request é None
-            self.request = (-1,-1)
+        else:
+            self.request = (0,-1)
 
 class Robo:
-    
-    # TODO: Salvar no robô as informações das fábricas
+    """
+    position => posição atual do robô
+    pastPos => ultima posição do robô
+    path => caminho que o robô calculou com o A*
+    contents => o que o robô está carregando, lista de ints, cada int é um tipo de item
+    radius => raio de visão do robô
+    """
 
-    # position => posição atual do robô
-    # pastPos => ultima posição do robô
-    # path => caminho que o robô calculou com o A*
-    # contents => o que o robô está carregando, lista de ints, cada int é um tipo de item
-    # radius => raio de visão do robô
-
-    # estado:
-    #   0: movendo aleatóriamente, procurando por algo (0 -> 1, 0 -> 2)
-    #   1: calculando path pra algum objeto (1 -> 0)
-    #   2: path calculado, seguindo ele até o objeto (2 -> 0)
     def __init__(self, pos:tuple):
-        self.position = pos
-        self.pastPos  = (-1,-1)
-        self.path     = None
-        self.contents = []
-        self.state    = 0
-        self.radius   = 4
+        self.position  = pos
+        self.pastPos   = (-1,-1)
+        self.path      = []
+        self.contents  = []
+        self.state     = 0
+        self.radius    = 4
+        self.factories = []
 
-    def pick_up(self, cell: Celula):
-        # retorna True se pegou um item
-
+    def pick_up(self, cell: Celula) -> bool:
         if cell.contents in self.contents:
             return False
         else:
-            self.contents.append(cell.contents)
+            self.contents.append(cell.contents.tipo)
             cell.remove()
             return True
 
-    def get_contents(self) -> list:
-        return [x.tipo for x in self.contents]
-
-    def move_to(self, newPos):
+    def move_to(self, newPos) -> None:
         self.pastPos  = self.position
         self.position = newPos
 
-    def change_state(self, newState):
+    def change_state(self, newState) -> None:
         self.state = newState
-    
-    def drop(self, item):
-        del self.contents[self.contents.index(item)]
+
+    def set_factories(self, factoryList:list) -> None:
+        self.factories = factoryList
+
+    def deliver(self, factory:Fabrica) -> None:
+        # entregando algo que tem para a fábrica que encontrou
+        for item in self.contents:
+            if item in factory.request:
+                factory.deliver()
+                del self.contents[self.contents.index(item)]
+
+                if factory.request == (0,-1): 
+                    # se satisfez a necessidade de uma fábrica, tira ela da lista de fábricas acessíveis
+                    for index, obj in enumerate(self.factories):
+                        # como eu tenho uma cópia da lista de fábricas global, não posso
+                        # verificar se uma dada fábrica está nessa lista, pois apenas sua cópia está nela
+                        # isto é, não tenho um objeto Fábrica dentro da minha lista, tenho apenas cópias deles
+                        if factory.tipo == obj.tipo:
+                            self.factories.pop(index)
+                            return
 
 class PriorityQueue:
-    # uma implementação boba porém simples de fila de prioridade minima
+    """
+    Uma implementação boba porém simples de fila de prioridade minima
+    """
     def __init__(self, startcell=None, startWeight=None):
         weight    = startWeight if startWeight != None else -1
         temp_cell = startcell if startcell != None else (-1,-1)
@@ -200,6 +213,9 @@ class PriorityQueue:
 
     def __str__(self) -> str:
         return str(self.queue)
+
+    def __repr__(self) -> str:
+        return str(self)
 
     def to_list(self) -> list:
         returnList = []
