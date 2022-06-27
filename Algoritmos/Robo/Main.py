@@ -111,6 +111,8 @@ def main_loop(robotPos:tuple=None,factoriesPos:list=None, obstacles:tuple=None):
     simulationMap = FileHandler.load_map()
     # TODO Melhorar essa bagunça
 
+    print(FileHandler.pretty_placer(FileHandler.load_map()))
+
     if obstacles[0]: # inserindo os obstáculos no mapa
         choice = input("Inserir obstáculos? (y/n) ")
         if choice.casefold() == 'y'.casefold() or choice.casefold() == 's'.casefold():

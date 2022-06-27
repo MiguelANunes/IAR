@@ -1,6 +1,100 @@
 import Render
 from Classes import *
+
+import pygame
+from pygame.locals import *
 from random import randint
+
+def get_keys() -> int:
+    """
+    Usa funções do pygame para verificar as setas foram apertadas
+    Retorno:
+        1 = esquerda
+        2 = direita
+        3 = cima
+        4 = baixo
+        5 = enter
+        6 = espaço
+        0 = nenhuma
+    Esc mata o programa
+    """
+
+    for event in pygame.event.get():
+        if event.type == QUIT:
+            pygame.quit()
+            return
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT:
+                return 1
+            elif event.key == pygame.K_RIGHT:
+                return 2
+            elif event.key == pygame.K_UP:
+                return 3
+            elif event.key == pygame.K_DOWN:
+                return 4
+            elif event.key == pygame.K_RETURN:
+                return 5
+            elif event.key == pygame.K_SPACE:
+                return 6
+            elif event.key == pygame.K_ESCAPE:
+                pygame.quit()
+                exit()
+
+    return 0
+
+def pretty_placer(simulationMap:list) -> list:
+
+    print("Aperte as setas do teclado para mover o cursor")
+    print("Aperte enter para confirmar a posição do cursor")
+    print("Aperte espaço para sair")
+
+    returnList = []
+    posX = 0
+    posY = 0
+    possibleX = [(0, y) for y in range(42)]
+    possibleY = [(x, 0) for x in range(42)]
+    Render.draw(simulationMap, [], [])
+    Render.draw_colored_border(possibleX, (255,0,0))
+    Render.draw_colored_border(possibleY, (255,0,0))
+    Render.pygame.display.update()
+
+    while True:
+
+        key = get_keys()
+        if key in [1,2]:
+            possibleX = []
+            if key == 1:
+                posX -= 1
+            else:
+                posX += 1
+            for y in range(42):
+                possibleX.append((posX, y))        
+            Render.draw(simulationMap, [], [])
+            Render.draw_colored_border(possibleX, (255,0,0))
+            Render.draw_colored_border(possibleY, (255,0,0))
+            Render.pygame.display.update()
+
+        key = get_keys()
+        if key in [3,4]:
+            possibleY = []
+            if key == 3:
+                posY -= 1
+            else:
+                posY += 1
+            for x in range(42):
+                possibleY.append((x, posY))
+            Render.draw(simulationMap, [], [])
+            Render.draw_colored_border(possibleX, (255,0,0))
+            Render.draw_colored_border(possibleY, (255,0,0))
+            Render.pygame.display.update()
+        
+        key = get_keys()
+        if key == 5:
+            print(f"Li a posição ({posX},{posY})")
+            returnList.append((posX, posY))
+        
+        if key == 6:
+            return returnList
 
 def load_map():
     """
