@@ -1,9 +1,9 @@
 import pygame, argparse, copy     #pip install pygame
 from pygame.locals import *
 
-import Render, Logic
+import Render, Logic, FileHandler
 
-# TODO: Adicionar comentários de docstring para as funções
+WAITTIME = 250_000
 
 def check_pause() -> bool:
     """
@@ -97,7 +97,7 @@ def simulate(robot, possible_moves:list, simulationMap:list, itemList:list, fact
     else: # estado executando path
         Logic.state_fetch(robot, simulationMap, itemList, factoryList)
 
-def main_loop(robotPos:tuple=None,factoriesPos:list=None, obstacles:tuple=None) -> int:
+def main_loop(robotPos:tuple=None,factoriesPos:list=None, obstacles:tuple=None):
     """
     Loop principal da simulação
     Cria o mapa, fábrica, itens, robô, janela do pygame e roda a simulação em loop
@@ -108,7 +108,8 @@ def main_loop(robotPos:tuple=None,factoriesPos:list=None, obstacles:tuple=None) 
 
     Render.init_window() # inicializando a janela do pygame
 
-    simulationMap = Logic.load_map()
+    simulationMap = FileHandler.load_map()
+    # TODO Melhorar essa bagunça
 
     if obstacles[0]: # inserindo os obstáculos no mapa
         choice = input("Inserir obstáculos? (y/n) ")
@@ -117,7 +118,7 @@ def main_loop(robotPos:tuple=None,factoriesPos:list=None, obstacles:tuple=None) 
             
             # lendo obstaculos de um arquivo
             if (obstacles[1] or choice.casefold() == 'y'.casefold()) and choice.casefold() != 'n'.casefold(): 
-                obstaculos = Logic.load_obstacles()
+                obstaculos = FileHandler.load_obstacles()
                 if obstaculos == None:
                     print("Erro, não achei ou não consegui abrir o arquivo obstaculos.txt na pasta inputs")
                     return
@@ -125,13 +126,13 @@ def main_loop(robotPos:tuple=None,factoriesPos:list=None, obstacles:tuple=None) 
                     simulationMap[posX][posY].set_obstacle()
 
             else: # inserindo manualmente
-                Logic.generate_obstacles(simulationMap)
+                FileHandler.generate_obstacles(simulationMap, False)
 
-    robot         = Logic.generate_robot(simulationMap, robotPos)
-    robotPos      = robot.position
-    factoryList   = Logic.generate_factories(simulationMap, robotPos, factoriesPos)
-    itemList      = Logic.generate_items(simulationMap, robotPos)
-    totalCost     = 0
+    robot       = FileHandler.generate_robot(simulationMap, robotPos)
+    robotPos    = robot.position
+    factoryList = FileHandler.generate_factories(simulationMap, robotPos, factoriesPos)
+    itemList    = FileHandler.generate_items(simulationMap, robotPos)
+    totalCost   = 0
 
     # passando uma cópia da lista de fábricas para o robô
     # caso eu não faça isso, toda vez que mudar a lista do robô, também mudo a lista global
@@ -166,7 +167,10 @@ def main_loop(robotPos:tuple=None,factoriesPos:list=None, obstacles:tuple=None) 
             pygame.display.update()
 
         if robot.factories == []:
-            return totalCost
+            print("Fim da simulação!")
+            print("Ao fim da execução, o custo total dos caminhos percorridos pelo robô foi:",totalCost)
+            input("Aperte Enter (no terminal) para sair!")
+            return
 
 def main():
 
@@ -178,12 +182,13 @@ def main():
         -F pula a leitura da posição das fábricas de um arquivo
         -O pula a inserção de obstáculo, por linha de comando ou arquivo
         -I insere obstáculo apenas por arquivo
+        -W N define que N operações inúteis são feitas entre passos do algoritmo, usado para desacelerar a execução
         As flags -O e -I são mutuamente exclusivas, tentar executar o programa com as duas causará erro
     Uso dos argumentos:
-        python3 Main.py [-h | [-R] [-F] [-O | -I]]
+        python3 Main.py [-h | [-R] [-F] [-W N] [-O | -I]]
     """
-    # TODO: Implementar arg de linha de comando para tempo de espera
-    # TODO: Implementar arg de linha de comando que começa despausado
+
+    # TODO: Melhorar args de linha de comando
     robotPos  = None
     factories = None
 
@@ -197,6 +202,8 @@ def main():
     action="store_true", dest="noObstacle")
     parser.add_argument("-I", "--insertObstacle", help="Insere obstáculos a partir de um arquivo (pula inserção manual)", 
     action="store_true", dest="insertObstacle")
+    parser.add_argument("-W", "--waitFor", help="Número de operações inúteis que devem ser feitas entre passos do algoritmo, usado para artificialmente desacelerar a execução. Padrão = 250_000", 
+    type=int, metavar='N', dest="waitFor")
     args = parser.parse_args()
 
     if args.noObstacle and args.insertObstacle:
@@ -208,10 +215,11 @@ def main():
     if not args.readFactory:
         factories = get_custom_factory_position()
     obstacles     = (not args.noObstacle, args.insertObstacle)
+    if args.waitFor:
+        global WAITTIME
+        WAITTIME  = args.waitFor
 
-    cost = main_loop(robotPos, factories, obstacles)
-
-    print("Ao fim da execução, o custo total dos caminhos percorridos pelo robô foi:",cost)
+    main_loop(robotPos, factories, obstacles)
 
 if __name__ == "__main__":
     main()

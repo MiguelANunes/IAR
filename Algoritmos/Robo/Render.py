@@ -5,12 +5,18 @@ width, height = 756, 672
 DISPLAY = None
 
 def init_window():
+    """
+    Inicializa a janela do pygame
+    """
     pygame.init()
     global DISPLAY
     DISPLAY = pygame.display.set_mode((width, height), 0, 32)
     pygame.display.set_caption("Robô")
 
 def draw(simulationMap:list, itemList:list, factoryList:list, robot=None):
+    """
+    Desenha o mapa da simulação, os itens, as fábricas e o robô, se estes foram fornecidos
+    """
     pos_x = 0 # linha onde vai desenhar
     for x in range(42):
         pos_y = 0 # coluna onde vai desenhar
@@ -39,34 +45,14 @@ def draw(simulationMap:list, itemList:list, factoryList:list, robot=None):
     for y in range(0,672,16): # desenhando linhas horizontais separadoras
         pygame.draw.line(DISPLAY, (64,64,64), (0, y), (width, y))
 
-
-def draw_border(border:list):
-    # desenha uma borda branca ao redor das células que estão na fronteira do A*
+def draw_colored_border(border:list, color:tuple=None):
+    """
+    Desenha uma borda de cor fornecida ao redor das células na lista fornecida
+    Caso nenhuma cor seja fornecida, desenha uma borda branca
+    """
+    color = (255,255,255) if color == None else color
     for target in border:
-        pygame.draw.line(DISPLAY, (255,255,255), ((18*target[0])-18, (16*target[1])-16), ((18*target[0]),    (16*target[1])-16))
-        pygame.draw.line(DISPLAY, (255,255,255), ((18*target[0])-18, (16*target[1])-16), ((18*target[0])-18, (16*target[1])))
-        pygame.draw.line(DISPLAY, (255,255,255), ((18*target[0])-18, (16*target[1])),    ((18*target[0]),    (16*target[1])))
-        pygame.draw.line(DISPLAY, (255,255,255), ((18*target[0]),    (16*target[1])-16), ((18*target[0]),    (16*target[1])))
-
-# TODO: Ver se é necessário remover isso
-# def draw_looking_at(lookingAt):
-#     # desenha uma borda amarela ao redor das células que estão sendo avaliadas pelo A*
-#     pygame.draw.line(DISPLAY, (255,255,0), ((18*lookingAt[0])-18, (16*lookingAt[1])-16), ((18*lookingAt[0]),    (16*lookingAt[1])-16))
-#     pygame.draw.line(DISPLAY, (255,255,0), ((18*lookingAt[0])-18, (16*lookingAt[1])-16), ((18*lookingAt[0])-18, (16*lookingAt[1])))
-#     pygame.draw.line(DISPLAY, (255,255,0), ((18*lookingAt[0])-18, (16*lookingAt[1])),    ((18*lookingAt[0]),    (16*lookingAt[1])))
-#     pygame.draw.line(DISPLAY, (255,255,0), ((18*lookingAt[0]),    (16*lookingAt[1])-16), ((18*lookingAt[0]),    (16*lookingAt[1])))
-
-# def erase_looking_at(lookingAt):
-#     # desfaz a borda amarela ao redor da célula
-#     pygame.draw.line(DISPLAY, (255,255,255), ((18*lookingAt[0])-18, (16*lookingAt[1])-16), ((18*lookingAt[0]),    (16*lookingAt[1])-16))
-#     pygame.draw.line(DISPLAY, (255,255,255), ((18*lookingAt[0])-18, (16*lookingAt[1])-16), ((18*lookingAt[0])-18, (16*lookingAt[1])))
-#     pygame.draw.line(DISPLAY, (255,255,255), ((18*lookingAt[0])-18, (16*lookingAt[1])),    ((18*lookingAt[0]),    (16*lookingAt[1])))
-#     pygame.draw.line(DISPLAY, (255,255,255), ((18*lookingAt[0]),    (16*lookingAt[1])-16), ((18*lookingAt[0]),    (16*lookingAt[1])))
-
-def draw_path(path:list):
-    # desenha uma borda vermelha ao reder das células do path escolhido pelo robô
-    for cell in path: 
-        pygame.draw.line(DISPLAY, (255,0,0), ((18*cell[0])+18, (16*cell[1])+16), ((18*cell[0]),    (16*cell[1])+16))
-        pygame.draw.line(DISPLAY, (255,0,0), ((18*cell[0])+18, (16*cell[1])+16), ((18*cell[0])+18, (16*cell[1])))
-        pygame.draw.line(DISPLAY, (255,0,0), ((18*cell[0])+18, (16*cell[1])),    ((18*cell[0]),    (16*cell[1])))
-        pygame.draw.line(DISPLAY, (255,0,0), ((18*cell[0]),    (16*cell[1])+16), ((18*cell[0]),    (16*cell[1])))
+        pygame.draw.line(DISPLAY, color, ((18*target[0])+18, (16*target[1])+16), ((18*target[0]),    (16*target[1])+16))
+        pygame.draw.line(DISPLAY, color, ((18*target[0])+18, (16*target[1])+16), ((18*target[0])+18, (16*target[1])))
+        pygame.draw.line(DISPLAY, color, ((18*target[0])+18, (16*target[1])),    ((18*target[0]),    (16*target[1])))
+        pygame.draw.line(DISPLAY, color, ((18*target[0]),    (16*target[1])+16), ((18*target[0]),    (16*target[1])))

@@ -163,6 +163,7 @@ class Robo:
         self.radius    = 4
         self.factories = []
 
+    # TODO: Mudar lista de itens para carregar vários itens do mesmo tipo
     def pick_up(self, cell: Celula) -> bool:
         if cell.contents in self.contents:
             return False
@@ -170,6 +171,9 @@ class Robo:
             self.contents.append(cell.contents.tipo)
             cell.remove()
             return True
+
+    def get_tipo_contents(self) -> list:
+        return [x.tipo for x in self.contents]
 
     def move_to(self, newPos) -> None:
         self.pastPos  = self.position
