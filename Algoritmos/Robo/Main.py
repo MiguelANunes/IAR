@@ -5,6 +5,13 @@ import Render, Logic, FileHandler
 
 WAITTIME = 250_000
 
+def get_confirmation(message:str):
+    choice = input(message+" (y/n) ")
+    if choice.casefold() == 'y'.casefold() or choice.casefold() == 's'.casefold():
+        return True
+    else:
+        return False
+
 def check_pause() -> bool:
     """
     Usa funções do pygame para verificar se espaço ou esc foram apertados
@@ -97,43 +104,13 @@ def simulate(robot, possible_moves:list, simulationMap:list, itemList:list, fact
     else: # estado executando path
         Logic.state_fetch(robot, simulationMap, itemList, factoryList)
 
-def main_loop(robotPos:tuple=None,factoriesPos:list=None, obstacles:tuple=None):
+def main_loop(simulationMap, robot, factoryList:list=None, itemList:list=None):
     """
     Loop principal da simulação
     Cria o mapa, fábrica, itens, robô, janela do pygame e roda a simulação em loop
     """
 
     pause = True
-    end = False
-
-    Render.init_window() # inicializando a janela do pygame
-
-    simulationMap = FileHandler.load_map()
-    # TODO Melhorar essa bagunça
-
-    print(FileHandler.pretty_placer(FileHandler.load_map()))
-
-    if obstacles[0]: # inserindo os obstáculos no mapa
-        choice = input("Inserir obstáculos? (y/n) ")
-        if choice.casefold() == 'y'.casefold() or choice.casefold() == 's'.casefold():
-            choice = input("Ler obstáculos de um arquivo? (y/n) ")
-            
-            # lendo obstaculos de um arquivo
-            if (obstacles[1] or choice.casefold() == 'y'.casefold()) and choice.casefold() != 'n'.casefold(): 
-                obstaculos = FileHandler.load_obstacles()
-                if obstaculos == None:
-                    print("Erro, não achei ou não consegui abrir o arquivo obstaculos.txt na pasta inputs")
-                    return
-                for posX,posY in obstaculos:
-                    simulationMap[posX][posY].set_obstacle()
-
-            else: # inserindo manualmente
-                FileHandler.generate_obstacles(simulationMap, False)
-
-    robot       = FileHandler.generate_robot(simulationMap, robotPos)
-    robotPos    = robot.position
-    factoryList = FileHandler.generate_factories(simulationMap, robotPos, factoriesPos)
-    itemList    = FileHandler.generate_items(simulationMap, robotPos)
     totalCost   = 0
 
     # passando uma cópia da lista de fábricas para o robô
@@ -178,50 +155,132 @@ def main():
 
     """
     Função principal da simulação
+    Gera o mapa, o robô, as fábricas e os obstáculos e manda isso pro loop principal
+    No loop principal, os itens são gerados e a simulação começa
     Sobre os argumentos de linha de comando definidos a baixo:
-        -h printa um menu de ajuda explicando os argumentos e não executa o programa
-        -R pula a leitura da posição do robô de um arquivo
-        -F pula a leitura da posição das fábricas de um arquivo
-        -O pula a inserção de obstáculo, por linha de comando ou arquivo
-        -I insere obstáculo apenas por arquivo
-        -W N define que N operações inúteis são feitas entre passos do algoritmo, usado para desacelerar a execução
-        As flags -O e -I são mutuamente exclusivas, tentar executar o programa com as duas causará erro
-    Uso dos argumentos:
-        python3 Main.py [-h | [-R] [-F] [-W N] [-O | -I]]
-    """
 
-    # TODO: Melhorar args de linha de comando
-    robotPos  = None
-    factories = None
+        -h Printa um menu de ajuda explicando os argumentos e não executa o programa
+
+        -r Lê posição do robô por arquivo
+        -R Pula a leitura da posição do robô (arquivo e usuário)
+
+        -r Lê posição da fábrica por arquivo
+        -F Pula a leitura da posição das fábricas (arquivo e usuário)
+
+        -o Lê posição dos obstáculos
+        -O Não insere obstáculo
+
+        -W N define que N operações inúteis são feitas entre passos do algoritmo, usado para desacelerar a execução
+
+        As flags (-r, -R), (-f -F) e (-o, -O) são mutuamente exclusivas, tentar executar o programa com as duas causará erro
+    Uso dos argumentos:
+        python3 Main.py [-h | [-r | -R] [-f | -F] [-o | -O] [-W N]]
+    """
 
     # argumentos de linha de comando
     parser = argparse.ArgumentParser()
-    parser.add_argument("-R", "--noRobot", help="Pula leitura de posição do robô", 
+
+    parser.add_argument("-r", "--readRobot", help="Lê posição do robô por arquivo", 
     action="store_true", dest="readRobot")
-    parser.add_argument("-F", "--noFactory", help="Pula leitura de posição das fábricas", 
+    parser.add_argument("-R", "--noRobot", help="Pula input de posição do robô (arquivo e usuário)", 
+    action="store_true", dest="noRobot")
+
+    parser.add_argument("-f", "--readFactory", help="Lê posição das fábricas por arquivo", 
     action="store_true", dest="readFactory")
-    parser.add_argument("-O", "--noObstacle", help="Pula a inserção de obstáculos", 
+    parser.add_argument("-F", "--noFactory", help="Pula leitura de posição das fábricas (arquivo e usuário)", 
+    action="store_true", dest="noFactory")
+
+    parser.add_argument("-o", "--readObstacle", help="Lê posição dos obstáculos por arquivo", 
+    action="store_true", dest="readObstacle")
+    parser.add_argument("-O", "--noObstacle", help="Não insere obstáculo", 
     action="store_true", dest="noObstacle")
-    parser.add_argument("-I", "--insertObstacle", help="Insere obstáculos a partir de um arquivo (pula inserção manual)", 
-    action="store_true", dest="insertObstacle")
+
     parser.add_argument("-W", "--waitFor", help="Número de operações inúteis que devem ser feitas entre passos do algoritmo, usado para artificialmente desacelerar a execução. Padrão = 250_000", 
     type=int, metavar='N', dest="waitFor")
     args = parser.parse_args()
 
-    if args.noObstacle and args.insertObstacle:
-        print("Erro, flags -I e -O são mutuamente exclusivas")
+    if args.readObstacle and args.noObstacle:
+        print("Erro, flags -o e -O são mutuamente exclusivas")
         return
 
-    if not args.readRobot:
-        robotPos  = get_custom_robot_position()
-    if not args.readFactory:
-        factories = get_custom_factory_position()
-    obstacles     = (not args.noObstacle, args.insertObstacle)
+    if args.readRobot and args.noRobot:
+        print("Erro, flags -r e -R são mutuamente exclusivas")
+        return
+
+    if args.readFactory and args.noFactory:
+        print("Erro, flags -f e -F são mutuamente exclusivas")
+        return
+
+    Render.init_window() # inicializando a janela do pygame
+
+    simulationMap = FileHandler.load_map()
+    robot = None
+
+    if not args.noObstacle:
+        if args.readObstacle: # Se quero ler do arquivo
+            FileHandler.get_obstacles(simulationMap, True, False)
+        else: # Se quero ler manual
+            if get_confirmation("Definir posição dos obstáculos?"):
+                if get_confirmation("Ler de um arquivo?"):
+                    FileHandler.get_obstacles(simulationMap, True, False)
+                else:
+                    FileHandler.get_obstacles(simulationMap, False, True)
+
+    cond1   = False
+    defined = False
+
+    if args.readRobot: # Se quero ler do arquivo
+        cond1   = True
+        defined = True
+    if not args.readRobot and args.noRobot: # Se quero gerar automaticamente
+        cond1   = False
+        defined = True
+
+    if defined:
+        robot = FileHandler.get_robot(simulationMap, cond1, False)
+    else:
+        cond1, cond2 = False, False
+        # Ta feio mas fica assim
+        if get_confirmation("Definir posição do robô"):
+            if get_confirmation("Ler de um arquivo?"):
+                cond1 = True # Se quero ler do arquivo
+            else:
+                cond2 = True # Se quero ler manual
+        else:
+            cond1, cond2 = False, False # Se quero gerar automaticamente
+        robot = FileHandler.get_robot(simulationMap, cond1, cond2)
+
+    robotPos = robot.position
+
+    cond1   = False
+    defined = False
+    if args.readFactory: # Se quero ler do arquivo
+        cond1   = True
+        defined = True
+    if not args.readFactory and args.noFactory: # Se quero gerar automaticamente
+        cond1   = True
+        defined = True
+
+    if defined:
+        factoryList = FileHandler.get_factories(simulationMap, cond1, False, robotPos)
+    else:
+        cond1, cond2 = False, False
+        if get_confirmation("Definir posição das fábricas"):
+            if get_confirmation("Ler de um arquivo?"):
+                cond1 = True # Se quero ler do arquivo
+            else:
+                cond2 = True # Se quero ler manual
+        else:
+            cond1, cond2 = False, False # Se quero gerar automaticamente
+        factoryList = FileHandler.get_factories(simulationMap, cond1, cond2, robotPos)
+
     if args.waitFor:
         global WAITTIME
         WAITTIME  = args.waitFor
 
-    main_loop(robotPos, factories, obstacles)
+    itemList = FileHandler.generate_items(simulationMap, robot.position)
+
+    main_loop(simulationMap, robot, factoryList, itemList)
 
 if __name__ == "__main__":
     main()

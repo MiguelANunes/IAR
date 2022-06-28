@@ -83,9 +83,17 @@ class Celula:
         return self.cost == -1
 
     def set_obstacle(self):
-        self.tipo   = -1
-        self.cost   = -1
-        self.color  = (0, 0, 0) # Preto
+        self.oldTipo  = self.tipo
+        self.oldCost  = self.cost
+        self.oldColor = self.color
+        self.tipo     = -1
+        self.cost     = -1
+        self.color    = (0, 0, 0) # Preto
+
+    def unset_obstacle(self):
+        self.tipo  = self.oldTipo
+        self.cost  = self.oldCost
+        self.color = self.oldColor
 
     def remove(self):
         self.contents = None
@@ -163,17 +171,28 @@ class Robo:
         self.radius    = 4
         self.factories = []
 
-    # TODO: Mudar lista de itens para carregar vários itens do mesmo tipo
-    def pick_up(self, cell: Celula) -> bool:
-        if cell.contents in self.contents:
-            return False
-        else:
-            self.contents.append(cell.contents.tipo)
-            cell.remove()
-            return True
+    def pick_up(self, cell: Celula) -> None:
+        self.contents.append(cell.contents)
+        cell.remove()
 
-    def get_tipo_contents(self) -> list:
+    def get_content_type(self) -> list:
         return [x.tipo for x in self.contents]
+
+    def get_content_name_by_type(self, type):
+        return [x.name for x in self.contents if x.tipo == type][0]
+
+    def remove_content_by_type(self, type):
+        """
+        Remove um item dos conteúdos do robô, dado seu tipo
+        """
+        done = False
+        l = []
+        for item in self.contents:
+            if item.tipo == type and not done:
+                done = True
+                continue
+            l.append(item)
+        self.contents = l
 
     def move_to(self, newPos) -> None:
         self.pastPos  = self.position
@@ -187,18 +206,18 @@ class Robo:
 
     def deliver(self, factory:Fabrica) -> None:
         # entregando algo que tem para a fábrica que encontrou
-        for item in self.contents:
-            if item in factory.request:
+        for itemType in self.get_content_type():
+            if itemType in factory.request:
                 factory.deliver()
-                del self.contents[self.contents.index(item)]
+                self.remove_content_by_type(itemType)
 
                 if factory.request == (0,-1): 
                     # se satisfez a necessidade de uma fábrica, tira ela da lista de fábricas acessíveis
-                    for index, obj in enumerate(self.factories):
+                    for index, fact in enumerate(self.factories):
                         # como eu tenho uma cópia da lista de fábricas global, não posso
                         # verificar se uma dada fábrica está nessa lista, pois apenas sua cópia está nela
                         # isto é, não tenho um objeto Fábrica dentro da minha lista, tenho apenas cópias deles
-                        if factory.tipo == obj.tipo:
+                        if factory.tipo == fact.tipo:
                             self.factories.pop(index)
                             return
 

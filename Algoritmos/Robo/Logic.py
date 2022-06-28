@@ -1,9 +1,9 @@
 from random import choice
 
-import Render, Main
+import Render
 from Classes import *
 
-from Main import WAITTIME
+from Main import WAITTIME, check_pause, check_resume
 
 def wait_for(ticks:int) -> None:
     """
@@ -38,13 +38,12 @@ def state_search(robot, possible_moves:list, simulationMap:list, listItems:list)
     # Para cada fábrica que o robô não satisfez, parece que ao final entrega uma ferramenta mesmo se não tiver ela
     for fabrica in robot.factories:
         x,y = fabrica.position
-        for tipoItem in robot.contents:
+        for tipoItem in robot.get_content_type():
             # Se o robô tem o item que essa fábrica quer
             if tipoItem == fabrica.request[1] and fabrica.request[0] > 0:
                 # Vai entregar ele
 
-                nome = [x for x in listItems if x.tipo == tipoItem][0].name # isso é a coisa mais nojenta que eu já escrevi
-                print(f"Indo até a fábrica {fabrica.name} entregar {nome}")
+                print(f"Indo até a fábrica {fabrica.name} entregar {robot.get_content_name_by_type(tipoItem)}")
                 robot.change_state(1)
                 result = state_find_path(robot.position, (x,y), possible_moves, simulationMap)
 
@@ -52,6 +51,8 @@ def state_search(robot, possible_moves:list, simulationMap:list, listItems:list)
                     robot.path = result[0]
                     cost = result[1]
                     print("Custo do Caminho:",cost)
+                else:
+                    print(f"Não achei um caminho de {robot.position} para {(x,y)}!!!")
 
                 robot.change_state(2)
                 return cost
@@ -71,7 +72,7 @@ def state_search(robot, possible_moves:list, simulationMap:list, listItems:list)
             if simulationMap[x][y].contents != None: # se achou alguma coisa no mapa
                 item = simulationMap[x][y].contents
 
-                if item in listItems and not item.tipo in robot.contents:
+                if item in listItems and not item.tipo in robot.get_content_type():
                     # se achou um item que não está carregando, põe ele na lista para ser buscado
                     # positionList.append((x,y))
                     # TODO implementar robô pegar itens da lista um de cada vez, somando seus custos ao total
@@ -151,11 +152,12 @@ def state_search(robot, possible_moves:list, simulationMap:list, listItems:list)
                     print("Achou um(a)", item.name)
                     result = state_find_path(robot.position, (x,y), possible_moves, simulationMap)
 
-                    if result != None:
+                    if result != (None, None):
                         robot.path = result[0]
                         cost = result[1]
                         print("Custo do Caminho:",cost)
-                        print()
+                    else:
+                        print(f"Não achei um caminho de {robot.position} para {(x,y)}!!!")
                     robot.change_state(2)
                     return cost
     
@@ -197,10 +199,11 @@ def state_fetch(robot, simulationMap:list, listItems:list, listFactories:list) -
         robot.path = None
         cell = simulationMap[new_pos[0]][new_pos[1]]
         if cell.contents in listFactories:
-            # ISSO é a coisa mais nojenta que eu já escrevi
-            nome = [x for x in listItems if x.tipo == cell.contents.request[1]][0].name 
+            # Tenho que printar o request com -1 pois esse print é feito antes de entregar
+            # É feito antes de entregar pois depois de entregar eu talvez não tenha mais o nome do item que foi entrege
+            # Visto que ele é deletado
+            print(f"A fábrica {cell.contents.name} agora precisa de {cell.contents.request[0]-1} {robot.get_content_name_by_type(cell.contents.request[1])}(s)\n")
             robot.deliver(cell.contents)
-            print(f"A fábrica {cell.contents.name} agora precisa de {cell.contents.request[0]} {nome}(s)\n")
             robot.change_state(0)
         else:
             del listItems[listItems.index(cell.contents)]
@@ -267,9 +270,9 @@ def AStar(startingPos:tuple, target:tuple, possible_moves:list, simulationMap):
     while fronteira.len() > 0:
 
         if not pause:
-            pause = Main.check_pause()
+            pause = check_pause()
         else:
-            pause = Main.check_resume()
+            pause = check_resume()
 
         if pause:
             continue
