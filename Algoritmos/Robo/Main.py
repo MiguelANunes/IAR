@@ -120,7 +120,9 @@ def main_loop(simulationMap, robot, factoryList:list=None, itemList:list=None):
 
     possible_moves = [(0,-1),(0,1),(-1,0),(1,0)]
     # apenas se move esq/dir cima/baixo
-    
+
+    Logic.set_wait(WAITTIME)
+
     Render.draw(simulationMap, itemList, factoryList, robot)
     pygame.display.update()
 
@@ -197,6 +199,7 @@ def main():
 
     parser.add_argument("-W", "--waitFor", help="Número de operações inúteis que devem ser feitas entre passos do algoritmo, usado para artificialmente desacelerar a execução. Padrão = 250_000", 
     type=int, metavar='N', dest="waitFor")
+
     args = parser.parse_args()
 
     if args.readObstacle and args.noObstacle:
@@ -216,7 +219,7 @@ def main():
     simulationMap = FileHandler.load_map()
     robot = None
 
-    if not args.noObstacle:
+    if not args.noObstacle: # Se quero obstáculos
         if args.readObstacle: # Se quero ler do arquivo
             FileHandler.get_obstacles(simulationMap, True, False)
         else: # Se quero ler manual
@@ -240,7 +243,6 @@ def main():
         robot = FileHandler.get_robot(simulationMap, cond1, False)
     else:
         cond1, cond2 = False, False
-        # Ta feio mas fica assim
         if get_confirmation("Definir posição do robô"):
             if get_confirmation("Ler de um arquivo?"):
                 cond1 = True # Se quero ler do arquivo

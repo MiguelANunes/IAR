@@ -153,6 +153,9 @@ class Fabrica:
         else:
             self.request = (0,-1)
 
+    def compare(self, otherFactory) -> bool:
+        return self.tipo == otherFactory.tipo and self.position == otherFactory.position and self.name == otherFactory.name
+
 class Robo:
     """
     position => posição atual do robô
@@ -163,13 +166,15 @@ class Robo:
     """
 
     def __init__(self, pos:tuple):
-        self.position  = pos
-        self.pastPos   = (-1,-1)
-        self.path      = []
-        self.contents  = []
-        self.state     = 0
-        self.radius    = 4
-        self.factories = []
+        self.position      = pos     # tupla (x,y)
+        self.pastPos       = (-1,-1) # tupla (x,y)
+        self.path          = []      # lista de tuplas (x,y)
+        self.contents      = []      # lista de items
+        self.state         = 0  
+        self.radius        = 4  
+        self.factories     = []      # lista de fábricas
+        self.itemPos       = []      # lista de tuplas (x,y)
+        self.targetFactory = None    # qual fábrica o robô quer chegar
 
     def pick_up(self, cell: Celula) -> None:
         self.contents.append(cell.contents)

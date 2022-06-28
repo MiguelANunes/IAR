@@ -1,16 +1,23 @@
 from random import choice
 
-import Render
-from Classes import *
+import Render, Classes, Main
 
-from Main import WAITTIME, check_pause, check_resume
+WAITTIME = None
 
-def wait_for(ticks:int) -> None:
+def set_wait(wait):
     """
-    Recebe um número e faz operações inúteis para gastar tempo e artificialmente tornar o
+    Função que define o tempo de espera
+    """
+    global WAITTIME
+    WAITTIME = wait
+
+def wait(ticks:int=None) -> None:
+    """
+    Opcionalmente recebe um número e faz operações inúteis para gastar tempo e artificialmente tornar o
     algoritmo mais lento
     Não retorna nada
     """
+    ticks = WAITTIME if ticks == None else ticks
     i = 0
     for _ in range(ticks):
         i += 1
@@ -29,13 +36,11 @@ def state_search(robot, possible_moves:list, simulationMap:list, listItems:list)
     # TODO: Mudar maneira que lido com a busca de itens,
     # Colocar todos numa lista e ir de um em um - talvez colocar essa lista no robô
 
-    # TODO: Mudar lista de itens para carregar vários itens do mesmo tipo
-
     posX, posY = robot.position
     raio = robot.radius
 
     # TODO: Confirmar que ele sempre entrega a ferramenta certa
-    # Para cada fábrica que o robô não satisfez, parece que ao final entrega uma ferramenta mesmo se não tiver ela
+    # Para cada fábrica que o robô não satisfez, parece que ao final (quando tem request = 1) entrega uma ferramenta mesmo se não tiver ela
     for fabrica in robot.factories:
         x,y = fabrica.position
         for tipoItem in robot.get_content_type():
@@ -44,7 +49,11 @@ def state_search(robot, possible_moves:list, simulationMap:list, listItems:list)
                 # Vai entregar ele
 
                 print(f"Indo até a fábrica {fabrica.name} entregar {robot.get_content_name_by_type(tipoItem)}")
+                print("contents:",robot.contents)
+                print("itemPos:",robot.itemPos)
                 robot.change_state(1)
+                robot.targetFactory = fabrica
+                print("targetFact:",robot.targetFactory)
                 result = state_find_path(robot.position, (x,y), possible_moves, simulationMap)
 
                 if result != (None, None):
@@ -61,7 +70,6 @@ def state_search(robot, possible_moves:list, simulationMap:list, listItems:list)
     for i in range(-raio, raio+1):
         for j in range(-raio, raio+1):
             x, y = posX+i, posY+j
-            # print(f"Estou olhando para {x},{y}")
             
             if not is_valid((x,y)):
                 continue
@@ -150,6 +158,7 @@ def state_search(robot, possible_moves:list, simulationMap:list, listItems:list)
                     robot.change_state(1)
 
                     print("Achou um(a)", item.name)
+                    robot.itemPos.append((x,y))
                     result = state_find_path(robot.position, (x,y), possible_moves, simulationMap)
 
                     if result != (None, None):
@@ -183,6 +192,7 @@ def state_fetch(robot, simulationMap:list, listItems:list, listFactories:list) -
     """
 
     if not isinstance(robot.path, list) or robot.path == []:
+        robot.path = []
         robot.change_state(0)
         return
 
@@ -191,24 +201,37 @@ def state_fetch(robot, simulationMap:list, listItems:list, listFactories:list) -
 
     new_pos = robot.path.pop(0)
 
-    wait_for(WAITTIME)
+    wait()
 
     robot.move_to(new_pos)
     
-    if robot.path == []:
-        robot.path = None
-        cell = simulationMap[new_pos[0]][new_pos[1]]
-        if cell.contents in listFactories:
+    cell = simulationMap[new_pos[0]][new_pos[1]]
+    if robot.position in robot.itemPos: 
+        # Se o robô está numa célula que tem um item na lista de itens que tem pra pegar, pega ele
+        del listItems[listItems.index(cell.contents)]
+        del robot.itemPos[robot.itemPos.index(cell.contents.position)]
+        robot.pick_up(cell)
+        if robot.path == []:
+            # Se pegou todos os items que tinha pra pegar, volta pro estado 0
+            robot.path = None
+            robot.change_state(0)
+
+    if cell.contents in listFactories and robot.targetFactory != None:
+        if robot.targetFactory.compare(cell.contents):
+            # Se o robô achou a fábrica para qual tenho que entregar o item que está carregando, entrega
+
             # Tenho que printar o request com -1 pois esse print é feito antes de entregar
             # É feito antes de entregar pois depois de entregar eu talvez não tenha mais o nome do item que foi entrege
             # Visto que ele é deletado
             print(f"A fábrica {cell.contents.name} agora precisa de {cell.contents.request[0]-1} {robot.get_content_name_by_type(cell.contents.request[1])}(s)\n")
             robot.deliver(cell.contents)
+            robot.targetFactory = None
+
+            # Se entregou, volta para o estado 0, não faz várias entregas de uma vez
             robot.change_state(0)
-        else:
-            del listItems[listItems.index(cell.contents)]
-            robot.pick_up(cell)
-            robot.change_state(0)
+
+    if robot.path == []:
+        robot.path = None
 
 def random_move(robot, possible_moves:list, simulationMap:list) -> None:
     """
@@ -232,20 +255,20 @@ def random_move(robot, possible_moves:list, simulationMap:list) -> None:
         while simulationMap[move[0]][move[1]].is_obstacle():
             move = choice(candidates)
                     
-        wait_for(WAITTIME)
+        wait()
         return robot.move_to(move)
     elif len(candidates) == 2:
         # se tem dois movimentos possíveis, faz qualquer um que não leve a posição anterior
         while move == robot.position or simulationMap[move[0]][move[1]].is_obstacle():
             move = choice(candidates)
         
-        wait_for(WAITTIME)
+        wait()
         return robot.move_to(move)
     
     while move == robot.pastPos or move == robot.position or simulationMap[move[0]][move[1]].is_obstacle():
         move = choice(candidates)
     
-    wait_for(WAITTIME)
+    wait()
     return robot.move_to(move)
 
 def distancia(pos1, pos2): 
@@ -259,7 +282,7 @@ def AStar(startingPos:tuple, target:tuple, possible_moves:list, simulationMap):
     Retorna uma tupla contendo o caminho em forma de lista de tuplas (x,y) e o custo dele
     """
 
-    fronteira = PriorityQueue(startingPos, 0) # fila de células que o robô vai checar e custo para chegar lá
+    fronteira = Classes.PriorityQueue(startingPos, 0) # fila de células que o robô vai checar e custo para chegar lá
     caminho = dict() # dict de célula p/ células, caminho[(x,y)] = (x1,y1) ==> melhor caminho para (x,y) é de (x1,y1)
     caminho[startingPos] = None # não há caminho para a célula inicial
     custos = dict() # custo p/ chegar em celulas, custos[(x,y)] = n ==> custo para chegar em (x,y) é n
@@ -270,14 +293,14 @@ def AStar(startingPos:tuple, target:tuple, possible_moves:list, simulationMap):
     while fronteira.len() > 0:
 
         if not pause:
-            pause = check_pause()
+            pause = Main.check_pause()
         else:
-            pause = check_resume()
+            pause = Main.check_resume()
 
         if pause:
             continue
 
-        wait_for(WAITTIME)
+        wait()
 
         Render.draw_colored_border(fronteira.to_list())
         Render.pygame.display.update()
@@ -320,16 +343,8 @@ def rebuildPath(path:dict, orig:tuple, dest:tuple) -> list:
     if orig == dest:
         return [orig]
 
-    try: # TODO Aqui surgiu um erro onde i, j = target da TypeError pois target é None
-        target = path[orig]
-        finalPath = [orig]
-    except TypeError:
-        print("target:",target)
-        print("orig:",orig)
-        print("dest:",dest)
-        for p in path:
-            print(p)
-        input()
+    target = path[orig]
+    finalPath = [orig]
 
     if orig == target:
         return finalPath
@@ -345,7 +360,6 @@ def rebuildPath(path:dict, orig:tuple, dest:tuple) -> list:
     finalPath.append(dest)
     finalPath.reverse()
 
-    # sanity check
-    finalPath = [x for x in finalPath if x != None]
+    finalPath = [x for x in finalPath if x != None] # sanity check
 
     return finalPath
