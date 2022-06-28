@@ -209,6 +209,13 @@ class Robo:
     def set_factories(self, factoryList:list) -> None:
         self.factories = factoryList
 
+    def get_necessary_items(self) -> list:
+        """
+        Retorna uma lista contendo todos os tipos de itens que as fábricas
+        que o robô vê precisam
+        """
+        return [x.request[1] for x in self.factories]
+
     def deliver(self, factory:Fabrica) -> None:
         # entregando algo que tem para a fábrica que encontrou
         for itemType in self.get_content_type():

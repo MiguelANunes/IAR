@@ -98,7 +98,7 @@ def simulate(robot, possible_moves:list, simulationMap:list, itemList:list, fact
     """
 
     if robot.state == 0: # estado procurando
-        return Logic.state_search(robot, possible_moves, simulationMap, itemList)
+        return Logic.state_search(robot, possible_moves, simulationMap, itemList, factoryList)
     elif robot.state == 1: # estado calculando path
         pass # se o robô está calculando o path, não há nada para fazer aqui
     else: # estado executando path

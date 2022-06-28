@@ -178,45 +178,7 @@ def load_obstacles() -> list:
             return obstacles
     except OSError:
         return None
-
-def get_all_but_one(myDicts:dict, ignore:list) -> dict:
-    """
-    Essa função era útil no passado, mas agora não é mais
-    Ainda assim, vai ficar aqui, pois pode ser útil no futuro
-
-    myDicts é um dict de dicts
-    as chaves de myDicts são tuplas
-
-    os valores de myDicts[chave1] são dicts
-    as chaves de  myDicts[chave1] são tuplas
-
-    os valores de myDicts[chave1][chave2] são ints
-
-    quero garantir que myDicts[key].get vai retornar um dict de dicts
-    onde myDicts[<chave>] irá retornar um dict que não tem uma chave que está em ignore
-    """
-
-    outerDict = dict()
-    #   || dict     || dict de dicts
-    #   \/          \/
-    for outerKey in myDicts:
-        innerDict = dict()
-            # || tupla   || dict
-            # \/         \/      
-        for innerKey in myDicts[outerKey]:
-            if innerKey in ignore: continue
-            #     /\         /\
-            #     || tupla   || lista de tuplas
-
-            #           || tupla    || int
-            #           \/          \/
-            innerDict[innerKey] = myDicts[outerKey][innerKey]
-        outerDict[outerKey] = innerDict
-        # /\         /\        /\
-        # ||         || dict   || dict
-        # || dict de dicts
-    
-    return outerDict
+        
 
 def generate_factories(simulationMap:list, robotPos:tuple, ignore:dict=None) -> list:
     """
