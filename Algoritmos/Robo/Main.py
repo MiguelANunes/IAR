@@ -185,6 +185,7 @@ def main():
     """
 
     # argumentos de linha de comando
+    # TODO: Mover isso para um função separada
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-r", "--readRobot", help="Lê posição do robô por arquivo", 
@@ -281,7 +282,7 @@ def main():
             cond1, cond2 = False, False # Se quero gerar automaticamente
         factoryList = FileHandler.get_factories(simulationMap, cond1, cond2, robotPos)
 
-    if args.waitFor:
+    if args.waitFor != None:
         global WAITTIME
         WAITTIME  = args.waitFor
 

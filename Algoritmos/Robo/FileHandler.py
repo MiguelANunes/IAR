@@ -179,7 +179,6 @@ def load_obstacles() -> list:
     except OSError:
         return None
         
-
 def generate_factories(simulationMap:list, robotPos:tuple, ignore:dict=None) -> list:
     """
     Gera fábricas e dispões elas aleatóriamente pelo mapa
@@ -292,7 +291,7 @@ def generate_factories(simulationMap:list, robotPos:tuple, ignore:dict=None) -> 
 
     return factoryList
 
-def generate_items(simulationMap:list, robotPos:tuple):
+def generate_items(simulationMap:list, robotPos:tuple) -> list:
     """
     Gera os itens para a simulação
     Dado o mapa e a posição do robô, insere os itens pedidos na descrição do trabalho 

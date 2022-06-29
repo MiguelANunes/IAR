@@ -5,6 +5,9 @@ import Render, Classes, Main
 
 WAITTIME = None
 
+# TODO: Contar nós expanded
+# TODO: Contar movimentos aleatórios
+
 def set_wait(wait):
     """
     Função que define o tempo de espera
@@ -51,7 +54,7 @@ def myMin(myDict:dict, ignore:list=None) -> tuple:
             least_key = key
     return least_key
 
-def state_search(robot, possible_moves:list, simulationMap:list, listItems:list, factoryList:list):
+def state_search(robot, possible_moves:list, simulationMap:list, listItems:list, factoryList:list, algorithm):
     """
     Estado de procura do robô, aqui ele procura por itens pelo mapa calcula o caminho até eles e vai até lá, 
         Se o robô já tiver o item que uma fábrica precisa, calcula o caminho até ela e vai até ela
@@ -71,17 +74,18 @@ def state_search(robot, possible_moves:list, simulationMap:list, listItems:list,
                 print(f"Indo até a fábrica {fabrica.name} em {fabrica.position} entregar {robot.get_content_name_by_type(tipoItem)}")
                 robot.change_state(1)
                 robot.targetFactory = fabrica
-                result = state_find_path(robot.position, (x,y), possible_moves, simulationMap)
+                result = state_find_path(robot.position, (x,y), possible_moves, simulationMap, algorithm)
 
                 if result != (None, None):
                     robot.path = result[0]
-                    cost = result[1]
+                    cost       = result[1]
+                    expanded   = result[2]
                     print("Custo do Caminho:",cost)
                 else:
                     print(f"Não achei um caminho de {robot.position} para {(x,y)}!!!")
 
                 robot.change_state(2)
-                return cost
+                return (cost, expanded)
 
     positionList = []
     for i in range(-raio, raio+1):
@@ -105,26 +109,26 @@ def state_search(robot, possible_moves:list, simulationMap:list, listItems:list,
 
     # Se achei algum item
     if positionList != []:
-        robot.path, cost = get_least_path(robot, possible_moves, simulationMap, listItems, factoryList, positionList)
+        robot.path, cost, expanded = get_least_path(robot, possible_moves, simulationMap, listItems, factoryList, positionList, algorithm)
         print("Custo do Caminho:",cost)
         robot.change_state(2)
-        return cost
+        return (cost, expanded)
 
     # se chegou aqui é pq não achou nada, logo faz um movimento aleatório
     random_move(robot, possible_moves, simulationMap)
+    return 1
 
-def state_find_path(originPos:tuple, targetPos:tuple, possible_moves:list, simulationMap:list) -> tuple:
+def state_find_path(originPos:tuple, targetPos:tuple, possible_moves:list, simulationMap:list, algorithm) -> tuple:
     """
     Executa o algoritmo A* e retorna o caminho calculado e o custo desse caminho, se ele existir
     """
-    result = AStar(originPos, targetPos, possible_moves, simulationMap)
+    # result = AStar(originPos, targetPos, possible_moves, simulationMap)
+    result = algorithm(originPos, targetPos, possible_moves, simulationMap)
 
     if result != None:
-        path, cost = result
+        return result
     else:
         return (None, None)
-
-    return (path, cost)
 
 def state_fetch(robot, simulationMap:list, listItems:list, listFactories:list) -> None:
     """
@@ -134,7 +138,7 @@ def state_fetch(robot, simulationMap:list, listItems:list, listFactories:list) -
         robot.path = []
         robot.change_state(0)
         return
-
+    
     Render.draw_colored_border(robot.path, (255,0,0))
     Render.pygame.display.update()
 
@@ -252,6 +256,7 @@ def AStar(startingPos:tuple, target:tuple, possible_moves:list, simulationMap):
     custos[startingPos] = 0
 
     pause = False
+    expanded = 0
 
     while fronteira.len() > 0:
 
@@ -272,7 +277,7 @@ def AStar(startingPos:tuple, target:tuple, possible_moves:list, simulationMap):
 
         if posicao_atual == target:
             # se achou o alvo, sai do loop e retorna uma tupla contendo o path e o custo total desse path
-            return (rebuildPath(caminho, target, startingPos), custos[posicao_atual] + simulationMap[target[0]][target[1]].cost)
+            return (rebuildPath(caminho, target, startingPos), custos[posicao_atual] + simulationMap[target[0]][target[1]].cost, expanded+1)
 
         vizinhos = []
         for i in possible_moves: # gerando todos os vizinhos do nó atual
@@ -283,6 +288,7 @@ def AStar(startingPos:tuple, target:tuple, possible_moves:list, simulationMap):
                 vizinhos.append(v) # não insere vizinhos que são obstáculos nem vizinho inválidos
         
         for vizinho in vizinhos:
+            expanded += 1
             novo_custo = custos[posicao_atual] + simulationMap[vizinho[0]][vizinho[1]].cost
             swap = False
 
@@ -293,6 +299,123 @@ def AStar(startingPos:tuple, target:tuple, possible_moves:list, simulationMap):
             if vizinho not in custos or swap:
                 custos[vizinho] = novo_custo
                 fronteira.push((novo_custo + distancia(target, vizinho)), vizinho)
+                caminho[vizinho] = posicao_atual
+
+    return None
+
+def Dijkstra(startingPos:tuple, target:tuple, possible_moves:list, simulationMap):
+    """
+    Algoritmo De Dijkstra
+    Dadas duas células quaisquer, calcula o caminho de menor custo entre elas, se ele existir
+    Retorna uma tupla contendo o caminho em forma de lista de tuplas (x,y) e o custo dele
+    """
+
+    fronteira = Classes.PriorityQueue(startingPos, 0) # fila de células que o robô vai checar e custo para chegar lá
+    caminho = dict() # dict de célula p/ células, caminho[(x,y)] = (x1,y1) ==> melhor caminho para (x,y) é de (x1,y1)
+    caminho[startingPos] = None # não há caminho para a célula inicial
+    custos = dict() # custo p/ chegar em celulas, custos[(x,y)] = n ==> custo para chegar em (x,y) é n
+    custos[startingPos] = 0
+
+    pause = False
+    expanded = 0
+
+    while fronteira.len() > 0:
+
+        if not pause:
+            pause = Main.check_pause()
+        else:
+            pause = Main.check_resume()
+
+        if pause:
+            continue
+
+        wait()
+
+        Render.draw_colored_border(fronteira.to_list())
+        Render.draw_colored_border([startingPos,target], (255,255,0))
+        Render.pygame.display.update()
+        _, posicao_atual = fronteira.pop()
+
+        if posicao_atual == target:
+            # se achou o alvo, sai do loop e retorna uma tupla contendo o path e o custo total desse path
+            return (rebuildPath(caminho, target, startingPos), custos[posicao_atual] + simulationMap[target[0]][target[1]].cost, expanded+1)
+
+        vizinhos = []
+        for i in possible_moves: # gerando todos os vizinhos do nó atual
+            v = posicao_atual[0]+i[0],posicao_atual[1]+i[1]
+            if not is_valid(v):
+                continue
+            if not simulationMap[v[0]][v[1]].is_obstacle():
+                vizinhos.append(v) # não insere vizinhos que são obstáculos nem vizinho inválidos
+        
+        for vizinho in vizinhos:
+            expanded += 1
+            novo_custo = custos[posicao_atual] + simulationMap[vizinho[0]][vizinho[1]].cost
+            swap = False
+
+            # .get retorna o valor associado a chave vizinho, caso ela exista, -1 caso não
+            if novo_custo < custos.get(vizinho, -1): 
+                swap = True
+
+            if vizinho not in custos or swap:
+                custos[vizinho] = novo_custo
+                fronteira.push((novo_custo), vizinho)
+                caminho[vizinho] = posicao_atual
+
+    return None
+
+def Greedy(startingPos:tuple, target:tuple, possible_moves:list, simulationMap):
+    """
+    Algoritmo A*
+    Dadas duas células quaisquer, calcula o caminho de menor custo entre elas, se ele existir
+    Retorna uma tupla contendo o caminho em forma de lista de tuplas (x,y) e o custo dele
+    """
+
+    fronteira = Classes.PriorityQueue(startingPos, 0) # fila de células que o robô vai checar e custo para chegar lá
+    caminho = dict() # dict de célula p/ células, caminho[(x,y)] = (x1,y1) ==> melhor caminho para (x,y) é de (x1,y1)
+    caminho[startingPos] = None # não há caminho para a célula inicial
+    custos = dict() # custo p/ chegar em celulas, custos[(x,y)] = n ==> custo para chegar em (x,y) é n
+    custos[startingPos] = 0
+
+    pause = False
+    expanded = 0
+
+    while fronteira.len() > 0:
+
+        if not pause:
+            pause = Main.check_pause()
+        else:
+            pause = Main.check_resume()
+
+        if pause:
+            continue
+
+        wait()
+
+        Render.draw_colored_border(fronteira.to_list())
+        Render.draw_colored_border([startingPos,target], (255,255,0))
+        Render.pygame.display.update()
+        _, posicao_atual = fronteira.pop()
+
+        if posicao_atual == target:
+            # se achou o alvo, sai do loop e retorna uma tupla contendo o path e o custo total desse path
+            return (rebuildPath(caminho, target, startingPos), custos[posicao_atual] + simulationMap[target[0]][target[1]].cost, expanded+1)
+
+        vizinhos = []
+        for i in possible_moves: # gerando todos os vizinhos do nó atual
+            v = posicao_atual[0]+i[0],posicao_atual[1]+i[1]
+            if not is_valid(v):
+                continue
+            if not simulationMap[v[0]][v[1]].is_obstacle():
+                vizinhos.append(v) # não insere vizinhos que são obstáculos nem vizinho inválidos
+        
+        for vizinho in vizinhos:
+            expanded += 1
+            novo_custo = custos[posicao_atual] + simulationMap[vizinho[0]][vizinho[1]].cost
+
+            if vizinho not in caminho:
+                custos[vizinho] = novo_custo
+                fronteira.push((distancia(target, vizinho)), vizinho)
                 caminho[vizinho] = posicao_atual
 
     return None
@@ -328,14 +451,16 @@ def rebuildPath(path:dict, orig:tuple, dest:tuple) -> list:
 
     return finalPath
 
-def get_least_path(robot, possible_moves:list, simulationMap:list, listItems:list, factoryList:list, positionList) -> tuple:
+def get_least_path(robot, possible_moves:list, simulationMap:list, listItems:list, factoryList:list, positionList, algorithm) -> tuple:
     # Para cada item na lista de item a serem buscados
     # Veja qual o caminho de menor custo entre todos eles
     pathRobot = dict()
     pathItems = dict()
+    expanded  = 0
     for pos in positionList:
         # Calculando caminho e custo p/ o robô ir para uma dada célula
-        result = state_find_path(robot.position, pos, possible_moves, simulationMap)
+        result = state_find_path(robot.position, pos, possible_moves, simulationMap, algorithm)
+        expanded += result[2]
         Render.draw(simulationMap, listItems, factoryList, robot)
         Render.pygame.display.update()
         if result != (None, None):
@@ -352,7 +477,8 @@ def get_least_path(robot, possible_moves:list, simulationMap:list, listItems:lis
                 tempList.reverse() # preciso copiar o path, se não estarei alterando o orignal
                 tempDist[pos1] = (tempList, pathItems[pos1][pos][1])
             else:
-                result = state_find_path(pos, pos1, possible_moves, simulationMap)
+                result = state_find_path(pos, pos1, possible_moves, simulationMap, algorithm)
+                expanded += result[2]
                 Render.draw(simulationMap, listItems, factoryList, robot)
                 Render.pygame.display.update()
                 if result != (None, None):
@@ -410,4 +536,4 @@ def get_least_path(robot, possible_moves:list, simulationMap:list, listItems:lis
         finalPath += pathItems[oldPosition][currentPosition][0]
         totalCost += pathItems[oldPosition][currentPosition][1]
 
-    return (finalPath, totalCost)
+    return (finalPath, totalCost, expanded)
