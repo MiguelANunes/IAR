@@ -5,9 +5,6 @@ import Render, Classes, Main
 
 WAITTIME = None
 
-# TODO: Contar nós expandidos
-# TODO: Contar movimentos aleatórios
-
 def set_wait(wait):
     """
     Função que define o tempo de espera
@@ -109,94 +106,10 @@ def state_search(robot, possible_moves:list, simulationMap:list, listItems:list,
 
     # Se achei algum item
     if positionList != []:
-
-        # Para cada item na lista de item a serem buscados
-        # Veja qual o caminho de menor custo entre todos eles
-        pathRobot = dict()
-        pathItems = dict()
-        for pos in positionList:
-            # Calculando caminho e custo p/ o robô ir para uma dada célula
-            result = state_find_path(robot.position, pos, possible_moves, simulationMap)
-            Render.draw(simulationMap, listItems, factoryList, robot)
-            Render.pygame.display.update()
-            if result != (None, None):
-                pathRobot[pos] = result
-            
-            tempDist = dict()
-            # Calculando caminho e custo para ir de uma célula para outra
-            for pos1 in positionList:
-                if pos == pos1: continue # não calculo de uma célula p/ ela mesma
-                if pos1 in pathItems:
-                    # Se já calculou o caminho de uma célula para outra, não precisa recalcular,
-                    #   basta inverter o caminho e tomar o mesmo custo
-                    tempList = copy.deepcopy(pathItems[pos1][pos][0])
-                    tempList.reverse() # preciso copiar o path, se não estarei alterando o orignal
-                    tempDist[pos1] = (tempList, pathItems[pos1][pos][1])
-                else:
-                    result = state_find_path(pos, pos1, possible_moves, simulationMap)
-                    Render.draw(simulationMap, listItems, factoryList, robot)
-                    Render.pygame.display.update()
-                    if result != (None, None):
-                        tempDist[pos1] = result
-            
-            # Para cada item, guardo o caminho e custo dele para todos os outros items que conheço
-            # Isto é, pathItems é um dict de dicts
-            pathItems[pos] = tempDist
-
-        # TODO Passar isso para outra função
-
-        # Selecionando o caminho de um item para outro que tem o menor custo
-        # Primeiro, pegar a posição do item cujo caminho do robô até ele tem o menor custo
-        # pathRobot é um dict que associa tuplas de posições à tupla (path, custo), logo
-        #   quero a tupla (x,y) com o menor custo para chegar até ela, partindo do robô
-        # Como também quero manter a ordem de movimentos, vou guardar um dict que associa tuplas
-        # de posição a outras tuplas de posição, isto é, associa posições de itens a posições de itens
-        # (a,b): (x,y) == do item em (a,b) devo ir para o item em (x,y)
-
-        leastPathRobot = myMin(pathRobot) # tupla (x,y)
-        finalOrder = {robot.position:leastPathRobot}
-
-        # Próximo passo é pegar o item cujo caminho partindo do item pego anteriormente
-        # até ele tem menor custo
-        # Tenho que garantir que não vou pegar a posição inicial
-
-        # pathItems[leastPathRobot] vai me retornar um dict que associa todas as posições acessíveis a partir
-        # da posição leastPathRobot com seus respectivos caminhos e custos
-        leastPathItems = myMin(pathItems[leastPathRobot], ignore=finalOrder.keys()) # tupla (x,y)
-        # finalOrder.keys() vai me gerar a lista de todas as chaves no dict finalOrder, isto é, todas as posições
-        # que eu já verifiquei
-        oldLeast = leastPathRobot
-
-        # Irei pegar a menor posição visível da atual até não houverem mais posições visíveis não visitadas
-        while leastPathItems != None:
-            # começando por essa operação, garanto que nunca irei inserir None no meu dict
-            finalOrder[oldLeast] = leastPathItems
-            oldLeast = leastPathItems
-            leastPathItems = myMin(pathItems[oldLeast], ignore=finalOrder.keys())
-
-        # Chegando aqui, tenho a sequência de células cujo caminho entre elas é minímo
-        # Isto é, tenho algo tipo {(a,b):(c,d), (c,d):(e,f), (g,h):(i,j),...}
-        # Essa sequência tem pelo menos um elemento, que é (posiçãoRoboX, posiçãoRoboY): (caminho,custo)
-        #                                                                                 da célula que ele viu
-
-        # Logo, eu posso, começando na posição do robô, montar o caminho que o robô deve executar e o custo total desse caminho
-        oldPosition     = robot.position
-        currentPosition = finalOrder[oldPosition]
-        finalPath       = pathRobot[currentPosition][0] # caminho
-        totalCost       = pathRobot[currentPosition][1] # custo do caminho
-        while True:
-            oldPosition     = currentPosition
-            currentPosition = finalOrder.get(oldPosition, None)
-            # Se retornou None, que dizer que achei o último elemento no caminho
-            if currentPosition == None:
-                break
-            finalPath += pathItems[oldPosition][currentPosition][0]
-            totalCost += pathItems[oldPosition][currentPosition][1]
-        
-        robot.path = finalPath
-        print("Custo do Caminho:",totalCost)
+        robot.path, cost = get_least_path(robot, possible_moves, simulationMap, listItems, factoryList, positionList)
+        print("Custo do Caminho:",cost)
         robot.change_state(2)
-        return
+        return cost
 
     # se chegou aqui é pq não achou nada, logo faz um movimento aleatório
     random_move(robot, possible_moves, simulationMap)
@@ -412,3 +325,87 @@ def rebuildPath(path:dict, orig:tuple, dest:tuple) -> list:
     finalPath = [x for x in finalPath if x != None] # sanity check
 
     return finalPath
+
+def get_least_path(robot, possible_moves:list, simulationMap:list, listItems:list, factoryList:list, positionList) -> tuple:
+    # Para cada item na lista de item a serem buscados
+    # Veja qual o caminho de menor custo entre todos eles
+    pathRobot = dict()
+    pathItems = dict()
+    for pos in positionList:
+        # Calculando caminho e custo p/ o robô ir para uma dada célula
+        result = state_find_path(robot.position, pos, possible_moves, simulationMap)
+        Render.draw(simulationMap, listItems, factoryList, robot)
+        Render.pygame.display.update()
+        if result != (None, None):
+            pathRobot[pos] = result
+        
+        tempDist = dict()
+        # Calculando caminho e custo para ir de uma célula para outra
+        for pos1 in positionList:
+            if pos == pos1: continue # não calculo de uma célula p/ ela mesma
+            if pos1 in pathItems:
+                # Se já calculou o caminho de uma célula para outra, não precisa recalcular,
+                #   basta inverter o caminho e tomar o mesmo custo
+                tempList = copy.deepcopy(pathItems[pos1][pos][0])
+                tempList.reverse() # preciso copiar o path, se não estarei alterando o orignal
+                tempDist[pos1] = (tempList, pathItems[pos1][pos][1])
+            else:
+                result = state_find_path(pos, pos1, possible_moves, simulationMap)
+                Render.draw(simulationMap, listItems, factoryList, robot)
+                Render.pygame.display.update()
+                if result != (None, None):
+                    tempDist[pos1] = result
+        
+        # Para cada item, guardo o caminho e custo dele para todos os outros items que conheço
+        # Isto é, pathItems é um dict de dicts
+        pathItems[pos] = tempDist
+
+    # Selecionando o caminho de um item para outro que tem o menor custo
+    # Primeiro, pegar a posição do item cujo caminho do robô até ele tem o menor custo
+    # pathRobot é um dict que associa tuplas de posições à tupla (path, custo), logo
+    #   quero a tupla (x,y) com o menor custo para chegar até ela, partindo do robô
+    # Como também quero manter a ordem de movimentos, vou guardar um dict que associa tuplas
+    # de posição a outras tuplas de posição, isto é, associa posições de itens a posições de itens
+    # (a,b): (x,y) == do item em (a,b) devo ir para o item em (x,y)
+
+    leastPathRobot = myMin(pathRobot) # tupla (x,y)
+    finalOrder = {robot.position:leastPathRobot}
+
+    # Próximo passo é pegar o item cujo caminho partindo do item pego anteriormente
+    # até ele tem menor custo
+    # Tenho que garantir que não vou pegar a posição inicial
+
+    # pathItems[leastPathRobot] vai me retornar um dict que associa todas as posições acessíveis a partir
+    # da posição leastPathRobot com seus respectivos caminhos e custos
+    leastPathItems = myMin(pathItems[leastPathRobot], ignore=finalOrder.keys()) # tupla (x,y)
+    # finalOrder.keys() vai me gerar a lista de todas as chaves no dict finalOrder, isto é, todas as posições
+    # que eu já verifiquei
+    oldLeast = leastPathRobot
+
+    # Irei pegar a menor posição visível da atual até não houverem mais posições visíveis não visitadas
+    while leastPathItems != None:
+        # começando por essa operação, garanto que nunca irei inserir None no meu dict
+        finalOrder[oldLeast] = leastPathItems
+        oldLeast = leastPathItems
+        leastPathItems = myMin(pathItems[oldLeast], ignore=finalOrder.keys())
+
+    # Chegando aqui, tenho a sequência de células cujo caminho entre elas é minímo
+    # Isto é, tenho algo tipo {(a,b):(c,d), (c,d):(e,f), (g,h):(i,j),...}
+    # Essa sequência tem pelo menos um elemento, que é (posiçãoRoboX, posiçãoRoboY): (caminho,custo)
+    #                                                                                 da célula que ele viu
+
+    # Logo, eu posso, começando na posição do robô, montar o caminho que o robô deve executar e o custo total desse caminho
+    oldPosition     = robot.position
+    currentPosition = finalOrder[oldPosition]
+    finalPath       = pathRobot[currentPosition][0] # caminho
+    totalCost       = pathRobot[currentPosition][1] # custo do caminho
+    while True:
+        oldPosition     = currentPosition
+        currentPosition = finalOrder.get(oldPosition, None)
+        # Se retornou None, que dizer que achei o último elemento no caminho
+        if currentPosition == None:
+            break
+        finalPath += pathItems[oldPosition][currentPosition][0]
+        totalCost += pathItems[oldPosition][currentPosition][1]
+
+    return (finalPath, totalCost)

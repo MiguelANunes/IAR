@@ -109,7 +109,6 @@ def main_loop(simulationMap, robot, factoryList:list=None, itemList:list=None):
     Loop principal da simulação
     Cria o mapa, fábrica, itens, robô, janela do pygame e roda a simulação em loop
     """
-    # TODO: Ver função do pygame de printar a tela
     pause = True
     totalCost   = 0
 
