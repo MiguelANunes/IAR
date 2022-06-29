@@ -1,8 +1,12 @@
+import copy
 from random import choice
 
 import Render, Classes, Main
 
 WAITTIME = None
+
+# TODO: Contar nós expandidos
+# TODO: Contar movimentos aleatórios
 
 def set_wait(wait):
     """
@@ -10,6 +14,13 @@ def set_wait(wait):
     """
     global WAITTIME
     WAITTIME = wait
+
+def send_message(listFactories:list):
+    print("Fábricas que ainda precisam de algum item:")
+    for factory in listFactories:
+        if factory.request[0] > 0:
+            print(f"\t{factory.name}: {factory.request[0]} {Classes.Item(factory.request[1],(-1,-1)).name}")
+    print("\n")
 
 def wait(ticks:int=None) -> None:
     """
@@ -25,45 +36,6 @@ def wait(ticks:int=None) -> None:
 def is_valid(pos:tuple):
     """Verifica se uma tupla é uma posição válida do mapa"""
     return pos[0] >= 0 and pos[1] >= 0 and pos[0] < 42 and pos[1] < 42
-
-def get_all_but_one(myDicts:dict, ignore:list) -> dict:
-    """
-    Essa função era útil no passado, mas agora não é mais
-    Ainda assim, vai ficar aqui, pois pode ser útil no futuro
-
-    myDicts é um dict de dicts
-    as chaves de myDicts são tuplas
-
-    os valores de myDicts[chave1] são dicts
-    as chaves de  myDicts[chave1] são tuplas
-
-    os valores de myDicts[chave1][chave2] são ints
-
-    quero garantir que myDicts[key].get vai retornar um dict de dicts
-    onde myDicts[<chave>] irá retornar um dict que não tem uma chave que está em ignore
-    """
-
-    outerDict = dict()
-    #   || dict     || dict de dicts
-    #   \/          \/
-    for outerKey in myDicts:
-        innerDict = dict()
-            # || tupla   || dict
-            # \/         \/      
-        for innerKey in myDicts[outerKey]:
-            if innerKey in ignore: continue
-            #     /\         /\
-            #     || tupla   || lista de tuplas
-
-            #           || tupla    || int
-            #           \/          \/
-            innerDict[innerKey] = myDicts[outerKey][innerKey]
-        outerDict[outerKey] = innerDict
-        # /\         /\        /\
-        # ||         || dict   || dict
-        # || dict de dicts
-    
-    return outerDict
 
 def myMin(myDict:dict, ignore:list=None) -> tuple:
     """
@@ -89,14 +61,10 @@ def state_search(robot, possible_moves:list, simulationMap:list, listItems:list,
     Se o robô não achar nenhum item, faz um movimento aleatório
     """
 
-    # TODO: Mudar maneira que lido com a busca de itens - ver bullet 6 pdf
-    # TODO implementar robô pegar itens da lista um de cada vez, somando seus custos ao total
-
     posX, posY = robot.position
-    raio = robot.radius
+    raio       = robot.radius
+    message    = False
 
-    # TODO: Confirmar que ele sempre entrega a ferramenta certa
-    # Para cada fábrica que o robô não satisfez, parece que ao final (quando tem request = 1) entrega uma ferramenta mesmo se não tiver ela
     for fabrica in robot.factories:
         x,y = fabrica.position
         for tipoItem in robot.get_content_type():
@@ -104,7 +72,7 @@ def state_search(robot, possible_moves:list, simulationMap:list, listItems:list,
             if tipoItem == fabrica.request[1] and fabrica.request[0] > 0:
                 # Vai entregar ele
 
-                print(f"Indo até a fábrica {fabrica.name} entregar {robot.get_content_name_by_type(tipoItem)}")
+                print(f"Indo até a fábrica {fabrica.name} em {fabrica.position} entregar {robot.get_content_name_by_type(tipoItem)}")
                 robot.change_state(1)
                 robot.targetFactory = fabrica
                 result = state_find_path(robot.position, (x,y), possible_moves, simulationMap)
@@ -136,20 +104,8 @@ def state_search(robot, possible_moves:list, simulationMap:list, listItems:list,
                 if item in listItems and item.tipo in robot.get_necessary_items():
                     # se achou um item que alguma fábrica precisa, põe ele na lista para ser buscado
                     positionList.append((x,y))
-                    print("Achou um(a)", item.name)
+                    print(f"Achou um(a) {item.name} em {item.position}")
                     robot.itemPos.append((x,y))
-
-                    # robot.change_state(1)
-                    # result = state_find_path(robot.position, (x,y), possible_moves, simulationMap)
-
-                    # if result != (None, None):
-                    #     robot.path = result[0]
-                    #     cost = result[1]
-                    #     print("Custo do Caminho:",cost)
-                    # else:
-                    #     print(f"Não achei um caminho de {robot.position} para {(x,y)}!!!")
-                    # robot.change_state(2)
-                    # return cost
 
     # Se achei algum item
     if positionList != []:
@@ -173,8 +129,8 @@ def state_search(robot, possible_moves:list, simulationMap:list, listItems:list,
                 if pos1 in pathItems:
                     # Se já calculou o caminho de uma célula para outra, não precisa recalcular,
                     #   basta inverter o caminho e tomar o mesmo custo
-                    tempList = pathItems[pos1][pos][0]
-                    tempList.reverse()
+                    tempList = copy.deepcopy(pathItems[pos1][pos][0])
+                    tempList.reverse() # preciso copiar o path, se não estarei alterando o orignal
                     tempDist[pos1] = (tempList, pathItems[pos1][pos][1])
                 else:
                     result = state_find_path(pos, pos1, possible_moves, simulationMap)
@@ -197,26 +153,26 @@ def state_search(robot, possible_moves:list, simulationMap:list, listItems:list,
         # de posição a outras tuplas de posição, isto é, associa posições de itens a posições de itens
         # (a,b): (x,y) == do item em (a,b) devo ir para o item em (x,y)
 
-        leastItemRobot = myMin(pathRobot) # tupla (x,y)
-        finalOrder = {robot.position:leastItemRobot}
+        leastPathRobot = myMin(pathRobot) # tupla (x,y)
+        finalOrder = {robot.position:leastPathRobot}
 
         # Próximo passo é pegar o item cujo caminho partindo do item pego anteriormente
         # até ele tem menor custo
         # Tenho que garantir que não vou pegar a posição inicial
 
-        # pathItems[leastItemRobot] vai me retornar um dict que associa todas as posições acessíveis a partir
-        # da posição leastItemRobot com seus respectivos caminhos e custos
-        leastItemDict = myMin(pathItems[leastItemRobot], ignore=finalOrder.keys()) # tupla (x,y)
+        # pathItems[leastPathRobot] vai me retornar um dict que associa todas as posições acessíveis a partir
+        # da posição leastPathRobot com seus respectivos caminhos e custos
+        leastPathItems = myMin(pathItems[leastPathRobot], ignore=finalOrder.keys()) # tupla (x,y)
         # finalOrder.keys() vai me gerar a lista de todas as chaves no dict finalOrder, isto é, todas as posições
         # que eu já verifiquei
-        oldLeast = leastItemRobot
+        oldLeast = leastPathRobot
 
         # Irei pegar a menor posição visível da atual até não houverem mais posições visíveis não visitadas
-        while leastItemDict != None:
+        while leastPathItems != None:
             # começando por essa operação, garanto que nunca irei inserir None no meu dict
-            finalOrder[oldLeast] = leastItemDict
-            oldLeast = leastItemDict
-            leastItemDict = myMin(pathItems[leastItemRobot], ignore=finalOrder.keys())
+            finalOrder[oldLeast] = leastPathItems
+            oldLeast = leastPathItems
+            leastPathItems = myMin(pathItems[oldLeast], ignore=finalOrder.keys())
 
         # Chegando aqui, tenho a sequência de células cujo caminho entre elas é minímo
         # Isto é, tenho algo tipo {(a,b):(c,d), (c,d):(e,f), (g,h):(i,j),...}
@@ -228,31 +184,14 @@ def state_search(robot, possible_moves:list, simulationMap:list, listItems:list,
         currentPosition = finalOrder[oldPosition]
         finalPath       = pathRobot[currentPosition][0] # caminho
         totalCost       = pathRobot[currentPosition][1] # custo do caminho
-        print(f"robot.position: {robot.position}")
-        print(f"currentPosition: {currentPosition}")
-        print()
         while True:
             oldPosition     = currentPosition
             currentPosition = finalOrder.get(oldPosition, None)
             # Se retornou None, que dizer que achei o último elemento no caminho
             if currentPosition == None:
                 break
-            try:
-                finalPath += pathItems[oldPosition][currentPosition][0]
-                totalCost += pathItems[oldPosition][currentPosition][1]
-            except (TypeError, KeyError) as e:
-                print(e)
-                print(f"oldPosition: {oldPosition}")
-                print(f"currentPosition: {currentPosition}")
-                for p in pathItems:
-                    print(f"pathItems[{p}]: {pathItems[p]}")
-                print()
-                for p in pathItems[oldPosition]:
-                    print(f"pathItems[{oldPosition}][{p}]: {pathItems[oldPosition][p]}")
-                print()
-                print(f"pathItems[oldPosition][currentPosition]: {pathItems[oldPosition][currentPosition]}")
-                print(f"pathItems[oldPosition][currentPosition][0]: {pathItems[oldPosition][currentPosition][0]}")
-                print(f"pathItems[oldPosition][currentPosition][1]: {pathItems[oldPosition][currentPosition][1]}")
+            finalPath += pathItems[oldPosition][currentPosition][0]
+            totalCost += pathItems[oldPosition][currentPosition][1]
         
         robot.path = finalPath
         print("Custo do Caminho:",totalCost)
@@ -279,7 +218,6 @@ def state_fetch(robot, simulationMap:list, listItems:list, listFactories:list) -
     """
     Executa o path que o robô calculou, movendo de célula em célula até chegar no seu objetivo
     """
-    # TODO: Confirmar que isso aqui trata o caso dos paths compostos
     if not isinstance(robot.path, list) or robot.path == []:
         robot.path = []
         robot.change_state(0)
@@ -299,22 +237,42 @@ def state_fetch(robot, simulationMap:list, listItems:list, listFactories:list) -
         # Se o robô está numa célula que tem um item na lista de itens que tem pra pegar, pega ele
         del listItems[listItems.index(cell.contents)]
         del robot.itemPos[robot.itemPos.index(cell.contents.position)]
+
+        print(f"Pegou um(a) {cell.contents.name}")
         robot.pick_up(cell)
-        if robot.path == []:
+
+        if robot.path == []: 
             # Se pegou todos os items que tinha pra pegar, volta pro estado 0
             robot.path = None
+            names = robot.get_content_names()
+            if names != []:
+                print(f"Robô agora tem {len(robot.contents)} item(ns), são eles:")
+                for name in names:
+                    print(f"\t{name}")
             robot.change_state(0)
 
     if cell.contents in listFactories and robot.targetFactory != None:
         if robot.targetFactory.compare(cell.contents):
             # Se o robô achou a fábrica para qual tenho que entregar o item que está carregando, entrega
 
-            # Tenho que printar o request com -1 pois esse print é feito antes de entregar
-            # É feito antes de entregar pois depois de entregar eu talvez não tenha mais o nome do item que foi entrege
-            # Visto que ele é deletado
-            print(f"\nEntreguei um(a) {robot.get_content_name_by_type(cell.contents.request[1])} para a fábrica {cell.contents.name}")
-            print(f"A fábrica {cell.contents.name} agora precisa de {cell.contents.request[0]-1} {robot.get_content_name_by_type(cell.contents.request[1])}(s)\n")
-            robot.deliver(cell.contents)
+            itemName    = copy.copy(robot.get_content_name_by_type(cell.contents.request[1]))
+            request     = copy.copy(cell.contents.request[0])
+            factoryName = copy.copy(cell.contents.name)
+
+            itemType = cell.contents.request[1]
+            total = 0
+            while itemType in robot.get_content_type():
+                total += robot.deliver(cell.contents)
+
+            # print(f"\nEntreguei um(a) {itemName} para a fábrica {cell.contents.name}")
+            print(f"\nForam entregues {total} {itemName}(s) para a fábrica {cell.contents.name}")
+            # Tenho que fazer request-total pois request é uma cópia do ultimo valor de request da fábrica
+            # Logo, não é atualizado quando o request da fábrica é atualizado
+            print(f"A fábrica {factoryName} agora precisa de {request-total} {itemName}(s)\n")
+
+            if request-total < 1:
+                send_message(listFactories)
+
             robot.targetFactory = None
 
             # Se entregou, volta para o estado 0, não faz várias entregas de uma vez
@@ -393,6 +351,7 @@ def AStar(startingPos:tuple, target:tuple, possible_moves:list, simulationMap):
         wait()
 
         Render.draw_colored_border(fronteira.to_list())
+        Render.draw_colored_border([startingPos,target], (255,255,0))
         Render.pygame.display.update()
         _, posicao_atual = fronteira.pop()
 

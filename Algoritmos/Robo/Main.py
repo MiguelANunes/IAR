@@ -109,7 +109,7 @@ def main_loop(simulationMap, robot, factoryList:list=None, itemList:list=None):
     Loop principal da simulação
     Cria o mapa, fábrica, itens, robô, janela do pygame e roda a simulação em loop
     """
-
+    # TODO: Ver função do pygame de printar a tela
     pause = True
     totalCost   = 0
 
@@ -129,11 +129,17 @@ def main_loop(simulationMap, robot, factoryList:list=None, itemList:list=None):
     print("\n***********\n")
     print("Aperte espaço para pausar/retomar")
     print("Aperte escape para sair\n")
+    path = False
     while(True):
         
         if not pause:
             pause = check_pause()
+            path = False
         else:
+            if not path: # garantindo que vai desenhar o path do robô quando estiver pausado
+                Render.draw_colored_border(robot.path,(255,0,0))
+                pygame.display.update()
+                path = True
             pause = check_resume()
         
         if pause == None:

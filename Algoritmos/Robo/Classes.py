@@ -1,4 +1,5 @@
 import sys
+
 import Logic
 
 class Item:
@@ -183,6 +184,12 @@ class Robo:
     def get_content_type(self) -> list:
         return [x.tipo for x in self.contents]
 
+    def get_content_names(self) -> list:
+        l = []
+        for x in self.contents:
+            l.append(x.name)
+        return l
+
     def get_content_name_by_type(self, type):
         return [x.name for x in self.contents if x.tipo == type][0]
 
@@ -216,13 +223,17 @@ class Robo:
         """
         return [x.request[1] for x in self.factories]
 
-    def deliver(self, factory:Fabrica) -> None:
-        # entregando algo que tem para a fábrica que encontrou
-        for itemType in self.get_content_type():
-            if itemType in factory.request:
+    def deliver(self, factory:Fabrica) -> int:
+        """
+        Dado uma fábrica, entrega todos os items que o robô tem que essa fábrica precisa para a fábrica
+        Retorna o total de itens entregue
+        """
+        count = 0
+        for item in self.contents:
+            if item.tipo in factory.request:
                 factory.deliver()
-                self.remove_content_by_type(itemType)
-
+                del self.contents[self.contents.index(item)]
+                count += 1
                 if factory.request == (0,-1): 
                     # se satisfez a necessidade de uma fábrica, tira ela da lista de fábricas acessíveis
                     for index, fact in enumerate(self.factories):
@@ -231,7 +242,8 @@ class Robo:
                         # isto é, não tenho um objeto Fábrica dentro da minha lista, tenho apenas cópias deles
                         if factory.tipo == fact.tipo:
                             self.factories.pop(index)
-                            return
+                            return count
+        return count
 
 class PriorityQueue:
     """
