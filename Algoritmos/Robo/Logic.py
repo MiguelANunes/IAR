@@ -329,6 +329,11 @@ def rebuildPath(path:dict, orig:tuple, dest:tuple) -> list:
     return finalPath
 
 def get_least_path(robot, possible_moves:list, simulationMap:list, listItems:list, factoryList:list, positionList) -> tuple:
+    """
+    Função que calcula um caminho que, iniciando na posição do robô, atravesse todas as posições em positionList
+        com menor custo possível
+    Retorna esse caminho e seu custo
+    """
     # Para cada item na lista de item a serem buscados
     # Veja qual o caminho de menor custo entre todos eles
     pathRobot = dict()

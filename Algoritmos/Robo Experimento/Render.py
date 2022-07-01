@@ -1,17 +1,21 @@
-import pygame
-from pygame.locals import *
+from contextlib import redirect_stdout
+
+with redirect_stdout(None):
+    # Omitindo a mensagem de boas vindas do pygame
+    import pygame #pip install pygame
+    from pygame.locals import *
 
 width, height = 756, 672
 DISPLAY = None
 
-def init_window():
+def init_window(ALGORITHM:str, index:int):
     """
     Inicializa a janela do pygame
     """
     pygame.init()
     global DISPLAY
     DISPLAY = pygame.display.set_mode((width, height), 0, 32)
-    pygame.display.set_caption("Robô")
+    pygame.display.set_caption(f"{ALGORITHM} Execução {index+1}")
 
 def draw(simulationMap:list, itemList:list, factoryList:list, robot=None):
     """

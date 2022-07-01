@@ -1,6 +1,11 @@
-import pygame, argparse, copy     #pip install pygame
-from pygame.locals import *
+from contextlib import redirect_stdout
 
+with redirect_stdout(None):
+    # Omitindo a mensagem de boas vindas do pygame
+    import pygame #pip install pygame
+    from pygame.locals import *
+
+import argparse, copy
 import Render, Logic, FileHandler
 
 WAITTIME = 250_000
@@ -91,101 +96,12 @@ def get_custom_factory_position() -> dict:
             factories = posList
     return factories
 
-def simulate(robot, possible_moves:list, simulationMap:list, itemList:list, factoryList:list) -> int:
+def parse_args():
     """
-    Executa um passo da simulação, de acordo com o estado atual do robô
-    Retorna o custo do último caminho calculado pelo robô
+    Lida com a geração e captura de argumentos de linha de comando
+    Retorna os argumentos a serem processados
     """
-
-    if robot.state == 0: # estado procurando
-        return Logic.state_search(robot, possible_moves, simulationMap, itemList, factoryList)
-    elif robot.state == 1: # estado calculando path
-        pass # se o robô está calculando o path, não há nada para fazer aqui
-    else: # estado executando path
-        Logic.state_fetch(robot, simulationMap, itemList, factoryList)
-
-def main_loop(simulationMap, robot, factoryList:list=None, itemList:list=None):
-    """
-    Loop principal da simulação
-    Cria o mapa, fábrica, itens, robô, janela do pygame e roda a simulação em loop
-    """
-    pause = True
-    totalCost   = 0
-
-    # passando uma cópia da lista de fábricas para o robô
-    # caso eu não faça isso, toda vez que mudar a lista do robô, também mudo a lista global
-    # e isso é muito ruim
-    robot.set_factories(copy.deepcopy(factoryList)) 
-
-    possible_moves = [(0,-1),(0,1),(-1,0),(1,0)]
-    # apenas se move esq/dir cima/baixo
-
-    Logic.set_wait(WAITTIME)
-
-    Render.draw(simulationMap, itemList, factoryList, robot)
-    pygame.display.update()
-
-    print("\n***********\n")
-    print("Aperte espaço para pausar/retomar")
-    print("Aperte escape para sair\n")
-    path = False
-    while(True):
-        
-        if not pause:
-            pause = check_pause()
-            path = False
-        else:
-            if not path: # garantindo que vai desenhar o path do robô quando estiver pausado
-                Render.draw_colored_border(robot.path,(255,0,0))
-                pygame.display.update()
-                path = True
-            pause = check_resume()
-        
-        if pause == None:
-            return totalCost
-
-        if not pause:
-            cost = simulate(robot, possible_moves, simulationMap, itemList, factoryList)
-            if cost != None:
-                totalCost += cost
-
-            Render.draw(simulationMap, itemList, factoryList, robot)
-            pygame.display.update()
-
-        if robot.factories == []:
-            print("Fim da simulação!")
-            print("Ao fim da execução, o custo total dos caminhos percorridos pelo robô foi:",totalCost)
-            input("Aperte Enter (no terminal) para sair!")
-            return
-
-def main():
-
-    """
-    Função principal da simulação
-    Gera o mapa, o robô, as fábricas e os obstáculos e manda isso pro loop principal
-    No loop principal, os itens são gerados e a simulação começa
-    Sobre os argumentos de linha de comando definidos a baixo:
-
-        -h Printa um menu de ajuda explicando os argumentos e não executa o programa
-
-        -r Lê posição do robô por arquivo
-        -R Pula a leitura da posição do robô (arquivo e usuário)
-
-        -r Lê posição da fábrica por arquivo
-        -F Pula a leitura da posição das fábricas (arquivo e usuário)
-
-        -o Lê posição dos obstáculos
-        -O Não insere obstáculo
-
-        -W N define que N operações inúteis são feitas entre passos do algoritmo, usado para desacelerar a execução
-
-        As flags (-r, -R), (-f -F) e (-o, -O) são mutuamente exclusivas, tentar executar o programa com as duas causará erro
-    Uso dos argumentos:
-        python3 Main.py [-h | [-r | -R] [-f | -F] [-o | -O] [-W N]]
-    """
-
-    # argumentos de linha de comando
-    # TODO: Mover isso para um função separada
+    
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-r", "--readRobot", help="Lê posição do robô por arquivo", 
@@ -206,7 +122,16 @@ def main():
     parser.add_argument("-W", "--waitFor", help="Número de operações inúteis que devem ser feitas entre passos do algoritmo, usado para artificialmente desacelerar a execução. Padrão = 250_000", 
     type=int, metavar='N', dest="waitFor")
 
-    args = parser.parse_args()
+    return parser.parse_args()
+
+def parse(args, simulationMap):
+
+    """
+    Processa os argumentos de linha de comando capturados pela função parse_args()
+    Retorna o robô e a lista de fábricas da simulação
+    """
+
+    global WAITTIME
 
     if args.readObstacle and args.noObstacle:
         print("Erro, flags -o e -O são mutuamente exclusivas")
@@ -220,10 +145,9 @@ def main():
         print("Erro, flags -f e -F são mutuamente exclusivas")
         return
 
-    Render.init_window() # inicializando a janela do pygame
+    if args.waitFor != None:
+        WAITTIME  = args.waitFor
 
-    simulationMap = FileHandler.load_map()
-    robot = None
 
     if not args.noObstacle: # Se quero obstáculos
         if args.readObstacle: # Se quero ler do arquivo
@@ -235,6 +159,7 @@ def main():
                 else:
                     FileHandler.get_obstacles(simulationMap, False, True)
 
+    robot = None
     cond1   = False
     defined = False
 
@@ -282,9 +207,108 @@ def main():
             cond1, cond2 = False, False # Se quero gerar automaticamente
         factoryList = FileHandler.get_factories(simulationMap, cond1, cond2, robotPos)
 
-    if args.waitFor != None:
-        global WAITTIME
-        WAITTIME  = args.waitFor
+    return (robot, factoryList)
+
+def simulate(robot, possible_moves:list, simulationMap:list, itemList:list, factoryList:list) -> int:
+    """
+    Executa um passo da simulação, de acordo com o estado atual do robô
+    Retorna o custo do último caminho calculado pelo robô
+    """
+
+    if robot.state == 0: # estado procurando
+        return Logic.state_search(robot, possible_moves, simulationMap, itemList, factoryList)
+    elif robot.state == 1: # estado calculando path
+        pass # se o robô está calculando o path, não há nada para fazer aqui
+    else: # estado executando path
+        Logic.state_fetch(robot, simulationMap, itemList, factoryList)
+
+def main_loop(simulationMap, robot, factoryList:list=None, itemList:list=None):
+    """
+    Loop principal da simulação
+    Cria o mapa, fábrica, itens, robô, janela do pygame e roda a simulação em loop
+    """
+    pause = True
+    totalCost   = 0
+
+    # passando uma cópia da lista de fábricas para o robô
+    # caso eu não faça isso, toda vez que mudar a lista do robô, também mudo a lista global
+    # e isso é muito ruim
+    robot.set_factories(copy.deepcopy(factoryList)) 
+
+    possible_moves = [(0,-1),(0,1),(-1,0),(1,0)]
+    # apenas se move esq/dir cima/baixo
+
+    Logic.set_wait(WAITTIME)
+
+    Render.draw(simulationMap, itemList, factoryList, robot)
+    pygame.display.update()
+
+    print("\n***********\n")
+    print("Aperte espaço para pausar/retomar")
+    print("Aperte escape para sair\n")
+    path = False
+    while(True):
+        
+        if not pause:
+            pause = check_pause()
+            path = False
+        else:
+            if not path and robot.path != None: # garantindo que vai desenhar o path do robô quando estiver pausado
+                Render.draw_colored_border(robot.path,(255,0,0))
+                pygame.display.update()
+                path = True
+            pause = check_resume()
+        
+        if pause == None:
+            return totalCost
+
+        if not pause:
+            cost = simulate(robot, possible_moves, simulationMap, itemList, factoryList)
+            if cost != None:
+                totalCost += cost
+
+            Render.draw(simulationMap, itemList, factoryList, robot)
+            pygame.display.update()
+
+        if robot.factories == []:
+            print("Fim da simulação!")
+            print("Ao fim da execução, o custo total dos caminhos percorridos pelo robô foi:",totalCost)
+            input("Aperte Enter (no terminal) para sair!")
+            return
+
+def main():
+
+    """
+    Função principal da simulação
+    Gera o mapa, o robô, as fábricas e os obstáculos e manda isso pro loop principal
+    No loop principal, os itens são gerados e a simulação começa
+    Sobre os argumentos de linha de comando:
+
+        -h Printa um menu de ajuda explicando os argumentos e não executa o programa
+
+        -r Lê posição do robô por arquivo
+        -R Pula a leitura da posição do robô (arquivo e usuário)
+
+        -r Lê posição da fábrica por arquivo
+        -F Pula a leitura da posição das fábricas (arquivo e usuário)
+
+        -o Lê posição dos obstáculos
+        -O Não insere obstáculo
+
+        -W N define que N operações inúteis são feitas entre passos do algoritmo, usado para desacelerar a execução
+
+        As flags (-r, -R), (-f -F) e (-o, -O) são mutuamente exclusivas, tentar executar o programa com as duas causará erro
+    Uso dos argumentos:
+        python3 Main.py [-h | [-r | -R] [-f | -F] [-o | -O] [-W N]]
+    """
+
+    args = parse_args()
+    Render.init_window() # inicializando a janela do pygame
+    simulationMap = FileHandler.load_map()
+
+    results     = parse(args, simulationMap)
+    robot       = results[0] # primeiro retorno é o robô
+    factoryList = results[1] # segundo são as fábricas
 
     itemList = FileHandler.generate_items(simulationMap, robot.position)
 

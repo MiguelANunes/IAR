@@ -1,6 +1,11 @@
-import pygame, argparse, copy, sys     #pip install pygame
-from pygame.locals import *
+from contextlib import redirect_stdout
 
+with redirect_stdout(None):
+    # Omitindo a mensagem de boas vindas do pygame
+    import pygame #pip install pygame
+    from pygame.locals import *
+
+import argparse, copy, sys
 import Render, Logic, FileHandler
 
 WAITTIME = 250_000
@@ -132,11 +137,15 @@ def main_loop(simulationMap, robot, factoryList:list, itemList:list, algorithm, 
 
     Logic.set_wait(WAITTIME)
 
-    Render.init_window()
+    Render.init_window(ALGORITHM, index)
     Render.draw(simulationMap, itemList, factoryList, robot)
     pygame.display.update()
 
-    Render.save(ALGORITHM+"_"+str(index)+" start")
+    if ALGORITHM == "AStar":
+        # Como toda execução tem o mesmo estado inicial, basta salvar apenas
+        # o estado inicial quando rodo o A*, visto que esse sempre é o primeiro alg de
+        # toda a bateria de testes
+        Render.save(f"Start {str(index)}")
 
     path  = False
     pause = False
@@ -146,7 +155,7 @@ def main_loop(simulationMap, robot, factoryList:list, itemList:list, algorithm, 
             pause = check_pause()
             path = False
         else:
-            if not path: # garantindo que vai desenhar o path do robô quando estiver pausado
+            if not path and robot.path != None: # garantindo que vai desenhar o path do robô quando estiver pausado
                 Render.draw_colored_border(robot.path,(255,0,0))
                 pygame.display.update()
                 path = True
@@ -197,7 +206,7 @@ def main():
     algorithm, index = parse(args)
 
     simulationMap = FileHandler.load_map()
-    robot         = FileHandler.generate_robot()
+    robot         = FileHandler.generate_robot(simulationMap)
     itemList      = FileHandler.generate_items(simulationMap, ignore=FileHandler.load_items())
     factoryList   = FileHandler.generate_factories(simulationMap, ignore=FileHandler.load_factories())
 

@@ -300,12 +300,22 @@ def generate_items(simulationMap:list, ignore:dict=None, robotPos=None) -> list:
 
     return itemList
 
-def generate_robot():
+def generate_robot(simulationMap:list, file=None):
     """
     Gera o robô para a simulação
     Retorna o robô, numa posição gerada aleatóriamente
     """
-    posX,posY = load_robot()
+    if file == None:
+        posX,posY = load_robot()
+    else:
+        # Condição para uma possível posição ser descartada
+        # Já tem algo naquela célula
+        # Ou a célula tem um obstáculo
+        condition = lambda x, y: simulationMap[x][y].contents != None or simulationMap[x][y].is_obstacle()
+
+        posX,posY = (randint(0, 41), randint(0, 41))
+        while condition(posX,posY):
+            posX,posY = (randint(0, 41), randint(0, 41))
     return Classes.Robo((posX,posY))
 
 def write_result(filename:str, cost:int, expanded:int, moves:int):

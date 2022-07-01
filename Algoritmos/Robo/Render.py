@@ -1,5 +1,9 @@
-import pygame
-from pygame.locals import *
+from contextlib import redirect_stdout
+
+with redirect_stdout(None):
+    # Omitindo a mensagem de boas vindas do pygame
+    import pygame #pip install pygame
+    from pygame.locals import *
 
 width, height = 756, 672
 DISPLAY = None

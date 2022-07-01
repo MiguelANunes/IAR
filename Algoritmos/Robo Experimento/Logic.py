@@ -5,9 +5,6 @@ import Render, Classes, Main
 
 WAITTIME = None
 
-# TODO: Contar nós expanded
-# TODO: Contar movimentos aleatórios
-
 def set_wait(wait):
     """
     Função que define o tempo de espera
@@ -306,7 +303,7 @@ def AStar(startingPos:tuple, target:tuple, possible_moves:list, simulationMap):
 def Dijkstra(startingPos:tuple, target:tuple, possible_moves:list, simulationMap):
     """
     Algoritmo De Dijkstra
-    Dadas duas células quaisquer, calcula o caminho de menor custo entre elas, se ele existir
+    Dadas duas células quaisquer, calcula o caminho de menor custo entre elas, desconsiderando distância, se ele existir
     Retorna uma tupla contendo o caminho em forma de lista de tuplas (x,y) e o custo dele
     """
 
@@ -366,8 +363,8 @@ def Dijkstra(startingPos:tuple, target:tuple, possible_moves:list, simulationMap
 
 def Greedy(startingPos:tuple, target:tuple, possible_moves:list, simulationMap):
     """
-    Algoritmo A*
-    Dadas duas células quaisquer, calcula o caminho de menor custo entre elas, se ele existir
+    Algoritmo de Greedy Best-First Search
+    Dadas duas células quaisquer, calcula o caminho de menor quantidade de células entre elas, se existir
     Retorna uma tupla contendo o caminho em forma de lista de tuplas (x,y) e o custo dele
     """
 
@@ -452,8 +449,11 @@ def rebuildPath(path:dict, orig:tuple, dest:tuple) -> list:
     return finalPath
 
 def get_least_path(robot, possible_moves:list, simulationMap:list, listItems:list, factoryList:list, positionList, algorithm) -> tuple:
-    # Para cada item na lista de item a serem buscados
-    # Veja qual o caminho de menor custo entre todos eles
+    """
+    Função que calcula um caminho que, iniciando na posição do robô, atravesse todas as posições em positionList
+        com menor custo possível
+    Retorna esse caminho e seu custo
+    """
     pathRobot = dict()
     pathItems = dict()
     expanded  = 0

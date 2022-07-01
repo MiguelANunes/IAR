@@ -3,7 +3,7 @@ import FileHandler
 def main():
 
     simulationMap = FileHandler.load_map()
-    robot         = FileHandler.generate_robot()
+    robot         = FileHandler.generate_robot(simulationMap, True)
     itemList      = FileHandler.generate_items(simulationMap, robotPos=robot.position)
     factoryList   = FileHandler.generate_factories(simulationMap, robotPos=robot.position)
 
