@@ -10,6 +10,7 @@ import Render, Logic, FileHandler
 
 WAITTIME = 250_000
 ALGORITHM = ""
+RENDER = False
 
 def check_pause() -> bool:
     """
@@ -67,6 +68,10 @@ def simulate(robot, possible_moves:list, simulationMap:list, itemList:list, fact
         Logic.state_fetch(robot, simulationMap, itemList, factoryList)
 
 def parse_args():
+    """
+    Lida com a geração e captura de argumentos de linha de comando
+    Retorna os argumentos a serem processados
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("-A", "--AStar", help="Executa o experimento com o Algoritmo A*", 
     action="store_true", dest="AStar")
@@ -74,6 +79,8 @@ def parse_args():
     action="store_true", dest="Dijkstra")
     parser.add_argument("-G", "--GDFS", help="Executa o experimento com o Algoritmo de Greedy (sem custo)", 
     action="store_true", dest="Greedy")
+    parser.add_argument("-R", "--render", help="Define se vai renderizar a simulação ou não", 
+    action="store_true", dest="render")
     parser.add_argument("-I", "--index", help="Indica qual o número dessa execução", 
     type=int, metavar='N', dest="index")
     parser.add_argument("-W", "--waitFor", help="Número de operações inúteis que devem ser feitas entre passos do algoritmo, usado para artificialmente desacelerar a execução. Padrão = 250_000", 
@@ -82,12 +89,17 @@ def parse_args():
     return parser.parse_args()
 
 def parse(args):
+    """
+    Processa os argumentos de linha de comando capturados pela função parse_args()
+    Retorna o robô e a lista de fábricas da simulação
+    """
 
     algorithm = None
     index = -1
 
     global ALGORITHM
     global WAITTIME
+    global RENDER
 
     if (args.AStar and args.Dijkstra) or (args.AStar and args.Greedy) or (args.Dijkstra and args.Greedy):
         # Não posso executar dois algoritmos ao mesmo tempo
@@ -115,6 +127,7 @@ def parse(args):
         print("Erro, é necessário forncer o número da simulação",file=sys.stderr)
         exit()
     
+    RENDER = args.render
     return (algorithm, index)
 
 def main_loop(simulationMap, robot, factoryList:list, itemList:list, algorithm, index):
@@ -136,26 +149,31 @@ def main_loop(simulationMap, robot, factoryList:list, itemList:list, algorithm, 
     # apenas se move esq/dir cima/baixo
 
     Logic.set_wait(WAITTIME)
+    Logic.set_render(RENDER)
 
-    Render.init_window(ALGORITHM, index)
-    Render.draw(simulationMap, itemList, factoryList, robot)
-    pygame.display.update()
+    if RENDER:
+        Render.init_window(ALGORITHM, index)
+        Render.draw(simulationMap, itemList, factoryList, robot)
+        pygame.display.update()
 
     if ALGORITHM == "AStar":
         # Como toda execução tem o mesmo estado inicial, basta salvar apenas
         # o estado inicial quando rodo o A*, visto que esse sempre é o primeiro alg de
         # toda a bateria de testes
+        Render.init_window(ALGORITHM, index)
         Render.save(f"Start {str(index)}")
+        pygame.display.quit()
+        pygame.quit()
 
     path  = False
     pause = False
     while(True):
         
-        if not pause:
+        if not pause and RENDER:
             pause = check_pause()
             path = False
-        else:
-            if not path and robot.path != None: # garantindo que vai desenhar o path do robô quando estiver pausado
+        elif pause and RENDER:
+            if not path and robot.path != None and RENDER: # garantindo que vai desenhar o path do robô quando estiver pausado
                 Render.draw_colored_border(robot.path,(255,0,0))
                 pygame.display.update()
                 path = True
@@ -172,11 +190,14 @@ def main_loop(simulationMap, robot, factoryList:list, itemList:list, algorithm, 
             elif result == 1:
                 randomMoves += 1
 
-            Render.draw(simulationMap, itemList, factoryList, robot)
-            pygame.display.update()
+            if RENDER:
+                Render.draw(simulationMap, itemList, factoryList, robot)
+                pygame.display.update()
 
         if robot.factories == []:
-            Render.save(ALGORITHM+"_"+str(index)+" end")
+            if RENDER:
+                Render.save(ALGORITHM+"_"+str(index)+" end")
+                
             return (totalCost, totalExpanded, randomMoves)
 
 def main():

@@ -125,7 +125,6 @@ def parse_args():
     return parser.parse_args()
 
 def parse(args, simulationMap):
-
     """
     Processa os argumentos de linha de comando capturados pela função parse_args()
     Retorna o robô e a lista de fábricas da simulação

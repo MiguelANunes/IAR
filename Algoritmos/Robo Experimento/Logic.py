@@ -4,6 +4,7 @@ from random import choice
 import Render, Classes, Main
 
 WAITTIME = None
+RENDER = True
 
 def set_wait(wait):
     """
@@ -11,6 +12,13 @@ def set_wait(wait):
     """
     global WAITTIME
     WAITTIME = wait
+
+def set_render(render):
+    """
+    Função que define se vai renderizar o mapa ou não
+    """
+    global RENDER
+    RENDER = render
 
 def send_message(listFactories:list):
     print("Fábricas que ainda precisam de algum item:")
@@ -136,8 +144,9 @@ def state_fetch(robot, simulationMap:list, listItems:list, listFactories:list) -
         robot.change_state(0)
         return
     
-    Render.draw_colored_border(robot.path, (255,0,0))
-    Render.pygame.display.update()
+    if RENDER:
+        Render.draw_colored_border(robot.path, (255,0,0))
+        Render.pygame.display.update()
 
     new_pos = robot.path.pop(0)
 
@@ -257,9 +266,9 @@ def AStar(startingPos:tuple, target:tuple, possible_moves:list, simulationMap):
 
     while fronteira.len() > 0:
 
-        if not pause:
+        if not pause and RENDER:
             pause = Main.check_pause()
-        else:
+        elif pause and RENDER:
             pause = Main.check_resume()
 
         if pause:
@@ -267,9 +276,10 @@ def AStar(startingPos:tuple, target:tuple, possible_moves:list, simulationMap):
 
         wait()
 
-        Render.draw_colored_border(fronteira.to_list())
-        Render.draw_colored_border([startingPos,target], (255,255,0))
-        Render.pygame.display.update()
+        if RENDER:
+            Render.draw_colored_border(fronteira.to_list())
+            Render.draw_colored_border([startingPos,target], (255,255,0))
+            Render.pygame.display.update()
         _, posicao_atual = fronteira.pop()
 
         if posicao_atual == target:
@@ -284,8 +294,8 @@ def AStar(startingPos:tuple, target:tuple, possible_moves:list, simulationMap):
             if not simulationMap[v[0]][v[1]].is_obstacle():
                 vizinhos.append(v) # não insere vizinhos que são obstáculos nem vizinho inválidos
         
+        expanded += 1
         for vizinho in vizinhos:
-            expanded += 1
             novo_custo = custos[posicao_atual] + simulationMap[vizinho[0]][vizinho[1]].cost
             swap = False
 
@@ -318,9 +328,9 @@ def Dijkstra(startingPos:tuple, target:tuple, possible_moves:list, simulationMap
 
     while fronteira.len() > 0:
 
-        if not pause:
+        if not pause and RENDER:
             pause = Main.check_pause()
-        else:
+        elif pause and RENDER:
             pause = Main.check_resume()
 
         if pause:
@@ -328,9 +338,10 @@ def Dijkstra(startingPos:tuple, target:tuple, possible_moves:list, simulationMap
 
         wait()
 
-        Render.draw_colored_border(fronteira.to_list())
-        Render.draw_colored_border([startingPos,target], (255,255,0))
-        Render.pygame.display.update()
+        if RENDER:
+            Render.draw_colored_border(fronteira.to_list())
+            Render.draw_colored_border([startingPos,target], (255,255,0))
+            Render.pygame.display.update()
         _, posicao_atual = fronteira.pop()
 
         if posicao_atual == target:
@@ -379,9 +390,9 @@ def Greedy(startingPos:tuple, target:tuple, possible_moves:list, simulationMap):
 
     while fronteira.len() > 0:
 
-        if not pause:
+        if not pause and RENDER:
             pause = Main.check_pause()
-        else:
+        elif pause and RENDER:
             pause = Main.check_resume()
 
         if pause:
@@ -389,9 +400,10 @@ def Greedy(startingPos:tuple, target:tuple, possible_moves:list, simulationMap):
 
         wait()
 
-        Render.draw_colored_border(fronteira.to_list())
-        Render.draw_colored_border([startingPos,target], (255,255,0))
-        Render.pygame.display.update()
+        if RENDER:
+            Render.draw_colored_border(fronteira.to_list())
+            Render.draw_colored_border([startingPos,target], (255,255,0))
+            Render.pygame.display.update()
         _, posicao_atual = fronteira.pop()
 
         if posicao_atual == target:
@@ -461,8 +473,9 @@ def get_least_path(robot, possible_moves:list, simulationMap:list, listItems:lis
         # Calculando caminho e custo p/ o robô ir para uma dada célula
         result = state_find_path(robot.position, pos, possible_moves, simulationMap, algorithm)
         expanded += result[2]
-        Render.draw(simulationMap, listItems, factoryList, robot)
-        Render.pygame.display.update()
+        if RENDER:
+            Render.draw(simulationMap, listItems, factoryList, robot)
+            Render.pygame.display.update()
         if result != (None, None):
             pathRobot[pos] = result
         
@@ -479,8 +492,9 @@ def get_least_path(robot, possible_moves:list, simulationMap:list, listItems:lis
             else:
                 result = state_find_path(pos, pos1, possible_moves, simulationMap, algorithm)
                 expanded += result[2]
-                Render.draw(simulationMap, listItems, factoryList, robot)
-                Render.pygame.display.update()
+                if RENDER:
+                    Render.draw(simulationMap, listItems, factoryList, robot)
+                    Render.pygame.display.update()
                 if result != (None, None):
                     tempDist[pos1] = result
         
