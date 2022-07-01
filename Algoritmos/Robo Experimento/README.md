@@ -50,7 +50,7 @@ Isso irá gerar um novo conjunto de dados para a simulação e irá executar a s
 
 **Aviso**: Ao começar uma nova rodada de testes, os resultados da última execução serão deletados.
 
-## Resultados já Obtidos:
+## Resultados dos Experimentos:
 
 Os resultado da última execução do experimento se encontram na pasta `outputs`, essa pasta contém arquivos .txt cujo nome é do formato `algoritmo_numeroExecução` que contém os resultados da execução número `numeroExecução` do algoritmo `algoritmo`.
 
