@@ -160,10 +160,12 @@ def main_loop(simulationMap, robot, factoryList:list, itemList:list, algorithm, 
         # Como toda execução tem o mesmo estado inicial, basta salvar apenas
         # o estado inicial quando rodo o A*, visto que esse sempre é o primeiro alg de
         # toda a bateria de testes
-        Render.init_window(ALGORITHM, index)
+        if not RENDER: # já não inicializou a janela
+            Render.init_window(ALGORITHM, index)
         Render.save(f"Start {str(index)}")
-        pygame.display.quit()
-        pygame.quit()
+        if not RENDER:
+            pygame.display.quit()
+            pygame.quit()
 
     path  = False
     pause = False

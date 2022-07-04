@@ -1,1 +1,0 @@
-Cost=2154, Expanded=2820, RandomMoves=9627
