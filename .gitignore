@@ -2,3 +2,5 @@
 *.xopp
 __pycache__/
 *.jpg
+*.png
+outpus/
