@@ -1,6 +1,7 @@
-from copy import copy
 import FileHandler, Dados
-from random import randint, shuffle
+from copy import copy
+from random import randint, shuffle, random
+from math import exp, log, tanh
 
 def initialize(size:int) -> tuple:
     """
@@ -33,7 +34,7 @@ def initialize(size:int) -> tuple:
 
     return (nodes, distancias)
 
-def calculate_cost(nodeList:list, solution:list, distances:dict):
+def calculate_cost(nodeList:list, solution:list, distances:dict) -> int:
     """
     Calcula o custo de uma dada solução, com base nas distâncias dos dados
     Retorna o custo calculado
@@ -46,18 +47,43 @@ def calculate_cost(nodeList:list, solution:list, distances:dict):
     
     return cost
 
-def generate_neighbor(solution:list):
+def generate_neighbor(solution:list) -> list:
     """
     Gera um dado vizinho da solução dada
     Isto é, troca dois nós na solução
     Retorna a solução com dois nós trocados
     """
     newSolution = copy(solution)
-    first, second = (randint(0, len(solution)), randint(0, len(solution)))
+    first, second = (randint(0, len(solution)-1), randint(0, len(solution)-1))
     # gerando dois números aleatórios entre 0 e o total de nós
     newSolution[first], newSolution[second] = newSolution[second], newSolution[first]
     
     return newSolution
+
+def func0(startTemp: int, curIter: int, finalTemp:int, maxIter:int) -> float:
+    """
+    Função de decrescimento de temperatura numero 0
+    """
+    return startTemp - (curIter * ((startTemp - finalTemp)/maxIter))
+
+def func1(startTemp: int, curIter: int, finalTemp:int, maxIter:int) -> float:
+    """
+    Função de decrescimento de temperatura numero 1
+    """
+    return startTemp * ((finalTemp/startTemp)**(curIter/maxIter))
+
+def func3(startTemp: int, curIter: int, finalTemp:int, maxIter:int) -> float:
+    """
+    Função de decrescimento de temperatura numero 3
+    """
+    a = log(startTemp - finalTemp)/log(maxIter)
+    return startTemp - curIter**a
+
+def func6(startTemp: int, curIter: int, finalTemp:int, maxIter:int) -> float:
+    """
+    Função de decrescimento de temperatura numero 6
+    """
+    return 0.5*(startTemp-finalTemp)*(1-tanh((10.0*curIter/maxIter)-5.0)) + finalTemp
 
 def simulated_annealing(nodeList:list, distances:dict) -> list:
     """
@@ -67,8 +93,10 @@ def simulated_annealing(nodeList:list, distances:dict) -> list:
     """
 
     constMetropolis = 5   # constante de equilibrio térmico
-    # temperature     = 100 # temperatura inicial
-    iteracoes       = 100_000
+    startTemp       = 100 # temperatura inicial
+    finalTemp       = 1
+    iteracao        = 0
+    maxIter         = 40000
 
     initialSolution = Dados.get_labels(nodeList)
     shuffle(initialSolution)
@@ -77,16 +105,41 @@ def simulated_annealing(nodeList:list, distances:dict) -> list:
 
     currentSolution = initialSolution
     currentCost     = startingCost
-    while iteracoes > 0:
+    temperature     = startTemp
+
+    temperatures = [temperature]
+    iterations   = [0]
+    costs        = [currentCost]
+    probs        = []
+
+    while iteracao < maxIter:
         
         for _ in range(constMetropolis):
             newSolution = generate_neighbor(currentSolution)
-            newCost     = calculate_cost(newSolution)
+            newCost     = calculate_cost(nodeList, newSolution, distances)
 
             if newCost < currentCost:
-                currentCost = newCost
+                # se achou uma solução melhor, troca
+                currentCost     = newCost
                 currentSolution = newSolution
-            else: # TODO: fazer a função de probabilidade de pegar a solução ruim
-                pass
+            elif random() < exp((-1*(newCost - currentCost))/temperature):
+                probs.append(exp((-1*(newCost - currentCost))/temperature))
+                # Testa se a probabilidade gerada é menor que um número aleatório entre 0 e 1
+                # Se passar, troca para a solução pior
+                currentCost     = newCost
+                currentSolution = newSolution
+        
 
-        iteracoes -= 1
+        # print(temperature)
+        temperature = func6(startTemp, iteracao, finalTemp, maxIter)
+        iteracao += 1
+        # print(temperature)
+
+        costs.append(currentCost)
+        temperatures.append(temperature)
+        iterations.append(iteracao)
+        if temperature == finalTemp:
+            break
+
+    print(f"Custo final {currentCost}")
+    return (costs, temperatures, iterations, probs)

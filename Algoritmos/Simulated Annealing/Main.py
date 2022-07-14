@@ -1,4 +1,4 @@
-import Logic, Dados
+import Logic, FileHandler
 
 def main() -> None:
     """
@@ -8,7 +8,14 @@ def main() -> None:
     size = 51
 
     nodes, distances = Logic.initialize(size)
-    Logic.simulated_annealing(nodes, distances)
+    costs, temps, iters, probs = Logic.simulated_annealing(nodes, distances)
+
+    FileHandler.dump_values(costs, temps, iters)
+    FileHandler.dump_probs(probs)
+
+    FileHandler.plot_costs()
+    FileHandler.plot_temps()
+    FileHandler.plot_probs()
 
 if __name__ == "__main__":
     main()
