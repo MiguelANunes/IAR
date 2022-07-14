@@ -3,6 +3,37 @@ from sys import stderr
 from contextlib import redirect_stdout
 from matplotlib import pyplot
 
+def initialize(size:int) -> tuple:
+    """
+    Dado o tamanho da instância atual, lê os nós dessa instância
+    Retorna uma tupla contendo todos os nós e a matriz de distância euclidiana (representada como dict de dicts)
+    """
+    nodes = load_nodes(size)
+
+    if nodes == None:
+        return
+    
+    distancias = dict()
+
+    for node in nodes:
+        tempDict = dict()
+        for node1 in nodes:
+            if node == node1: 
+                # não calcula distância de um nó para ele mesmo
+                continue
+            if node1 in distancias:
+                # se já está lá, não precisa recalcular
+                tempDict[node1] = distancias[node1][node]
+                continue
+            tempDict[node1] = Dados.dist_euclidiana(node, node1)
+        distancias[node] = tempDict
+
+    with open(f"outputs/params.txt","w") as f:
+        # limpando o arquivo de parametros
+        pass
+
+    return (nodes, distancias)
+
 def load_nodes(size:int) -> list: 
     """
     Função que lê de um arquivo os dados de uma dada instância
@@ -21,9 +52,27 @@ def load_nodes(size:int) -> list:
     
     return nodes
 
+def dump_params(params:dict, finalCost:float) -> None:
+    """
+    Escreve num arquivo de log os parametros de uma execução do SA e o seu custo
+    """
+    try:
+        with open(f"outputs/params.txt","a") as f:
+            with redirect_stdout(f):
+                for key in params:
+                        if key == "func": 
+                            # ignoro a função que foi usada
+                            continue
+                        print(f"{key:<15} {params[key]:>15}")
+                print(f"{'Custo':<15} {finalCost:>15.4f}\n")
+
+    except OSError:
+        print("Não consegui escrever os parametros", file=stderr)
+        exit()
+
 def dump_values(costs: list, temps:list, iters:list) -> None:
     """
-    Função que escreve num arquivo de log os resultados do SA
+    Escreve num arquivo de log os resultados do SA
     """
 
     try:
@@ -61,7 +110,7 @@ def dump_probs(probs: list) -> None:
         print("Não consegui escrever as probabilidades", file=stderr)
         exit()
 
-def plot_costs():
+def plot_costs(index:str) -> None:
     """
     Plota um gráfico contendo os valores de custos gerados pelo SA
     """
@@ -86,10 +135,10 @@ def plot_costs():
     pyplot.title("Custos")
     pyplot.legend()
 
-    pyplot.savefig("Custos.png")
+    pyplot.savefig(f"images/Custos - {index}.png")
     pyplot.close()
 
-def plot_temps():
+def plot_temps(index:str) -> None:
     """
     Plota um gráfico contendo os valores de temperaturas gerados pelo SA
     """
@@ -114,10 +163,10 @@ def plot_temps():
     pyplot.title("Temperaturas")
     pyplot.legend()
 
-    pyplot.savefig("Temperaturas.png")
+    pyplot.savefig(f"images/Temperaturas - {index}.png")
     pyplot.close()
 
-def plot_probs():
+def plot_probs(index:str) -> None:
     """
     Plota um gráfico contendo os valores de probabilidades gerados pelo SA
     """
@@ -142,5 +191,5 @@ def plot_probs():
     pyplot.title("Probabilidades")
     pyplot.legend()
 
-    pyplot.savefig("Probabilidades.png")
+    pyplot.savefig(f"images/Probabilidades - {index}.png")
     pyplot.close()

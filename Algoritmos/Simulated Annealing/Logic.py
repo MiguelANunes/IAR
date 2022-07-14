@@ -1,38 +1,7 @@
-import FileHandler, Dados
+import Dados
 from copy import copy
 from random import randint, shuffle, random
-from math import exp, log, tanh
-
-def initialize(size:int) -> tuple:
-    """
-    Dado o tamanho da instância atual, lê os nós dessa instância
-    Retorna uma tupla contendo todos os nós e a matriz de distância euclidiana (representada como dict de dicts)
-    """
-    nodes = FileHandler.load_nodes(size)
-
-    if nodes == None:
-        return
-    
-    distancias = dict()
-
-    for node in nodes:
-        tempDict = dict()
-        for node1 in nodes:
-            if node == node1: 
-                # não calcula distância de um nó para ele mesmo
-                continue
-            if node1 in distancias:
-                # se já está lá, não precisa recalcular
-                tempDict[node1] = distancias[node1][node]
-                continue
-            tempDict[node1] = Dados.dist_euclidiana(node, node1)
-        distancias[node] = tempDict
-
-    # for key in distancias:
-    #     for key1 in distancias[key]:
-    #         print(f"distancias[{key.label}][{key1.label}]={distancias[key][key1]}")
-
-    return (nodes, distancias)
+from math import exp
 
 def calculate_cost(nodeList:list, solution:list, distances:dict) -> int:
     """
@@ -60,43 +29,19 @@ def generate_neighbor(solution:list) -> list:
     
     return newSolution
 
-def func0(startTemp: int, curIter: int, finalTemp:int, maxIter:int) -> float:
-    """
-    Função de decrescimento de temperatura numero 0
-    """
-    return startTemp - (curIter * ((startTemp - finalTemp)/maxIter))
-
-def func1(startTemp: int, curIter: int, finalTemp:int, maxIter:int) -> float:
-    """
-    Função de decrescimento de temperatura numero 1
-    """
-    return startTemp * ((finalTemp/startTemp)**(curIter/maxIter))
-
-def func3(startTemp: int, curIter: int, finalTemp:int, maxIter:int) -> float:
-    """
-    Função de decrescimento de temperatura numero 3
-    """
-    a = log(startTemp - finalTemp)/log(maxIter)
-    return startTemp - curIter**a
-
-def func6(startTemp: int, curIter: int, finalTemp:int, maxIter:int) -> float:
-    """
-    Função de decrescimento de temperatura numero 6
-    """
-    return 0.5*(startTemp-finalTemp)*(1-tanh((10.0*curIter/maxIter)-5.0)) + finalTemp
-
-def simulated_annealing(nodeList:list, distances:dict) -> list:
+def simulated_annealing(nodeList:list, distances:dict, params:dict) -> list:
     """
     Algoritmo do Simulated Annealing
     Recebe uma solução inicial (uma sequência de nós) para o TSP 
     Retorna uma solução possívelmente ótima
     """
 
-    constMetropolis = 5   # constante de equilibrio térmico
-    startTemp       = 100 # temperatura inicial
-    finalTemp       = 1
+    constMetropolis = params["metropolis"] # constante de equilibrio térmico
+    startTemp       = params["startTemp"]  # temperatura inicial
+    finalTemp       = params["finalTemp"]
     iteracao        = 0
-    maxIter         = 40000
+    maxIter         = params["maxIter"]
+    func            = params["func"]
 
     initialSolution = Dados.get_labels(nodeList)
     shuffle(initialSolution)
@@ -130,10 +75,8 @@ def simulated_annealing(nodeList:list, distances:dict) -> list:
                 currentSolution = newSolution
         
 
-        # print(temperature)
-        temperature = func6(startTemp, iteracao, finalTemp, maxIter)
+        temperature = func(startTemp, iteracao, finalTemp, maxIter)
         iteracao += 1
-        # print(temperature)
 
         costs.append(currentCost)
         temperatures.append(temperature)
@@ -141,5 +84,4 @@ def simulated_annealing(nodeList:list, distances:dict) -> list:
         if temperature == finalTemp:
             break
 
-    print(f"Custo final {currentCost}")
-    return (costs, temperatures, iterations, probs)
+    return {"costs":costs, "temps":temperatures, "iters":iterations, "probs":probs, "finalCost": currentCost}
