@@ -1,10 +1,7 @@
 import Logic, FileHandler
 from Functions import *
 
-# TODO: Passar definição de parametros para uma outra função
-#   Recebe o nome da função que vai executar, retornar os parametros ideais dessa função
-#   Já tenhos os ideias para a função 6, arranjar outras duas para fazer isso
-
+# TODO: Arranjar outras duas funções para caso 51
 # TODO: Lidar com o caso de 100 nós
 
 def main() -> None:
