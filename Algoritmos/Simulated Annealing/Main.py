@@ -1,23 +1,36 @@
 import Logic, FileHandler
 from Functions import *
 
+# TODO: Passar definição de parametros para uma outra função
+#   Recebe o nome da função que vai executar, retornar os parametros ideais dessa função
+#   Já tenhos os ideias para a função 6, arranjar outras duas para fazer isso
+
+# TODO: Lidar com o caso de 100 nós
+
 def main() -> None:
     """
     Função principal do SA
     Gera os nós e suas distâncias e inicia o loop principal do SA
     """
+    print("Valor ótimo para 51:   426")
+    print("Valor ótimo para 100:  21_282")
 
-    funcs = {func6:"func6", func2: "func2"}
+    funcs    = {func6:"func6", func3:"func3"}
+    plotTemp = {"func6": False, "func3":False}
+
     for size in [51]:
-        # TODO: Melhorar a lista de nós para ser mais eficiente buscar nela
         nodes, distances = FileHandler.initialize(size)
-        for f in funcs:
+        print(f"Tamanho {size}")
+        for index in range(10):
+            
+            print(f"\tTeste {index}")
+            for f in funcs:
 
-            for index in range(10):
+                print(f"\t\t{funcs[f]}:", end=" ")
 
-                print(f"Tamanho {size}, teste {index}, função: {funcs[f]}")
-                # TODO: Lidar com parametros diferentes dinamicamente
-                params = {"metropolis":5, "startTemp":100, "finalTemp":0, "maxIter":40000, "func":f, "funcName":funcs[f]}
+                params             = get_best_param(size, funcs[f])
+                params["func"]     = f
+                params["funcName"] = funcs[f]
 
                 results   = Logic.simulated_annealing(nodes, distances, params)
                 costs     = results["costs"]
@@ -26,15 +39,19 @@ def main() -> None:
                 finalCost = results["finalCost"]
                 # probs = results["probs"]
 
-                print(f"Custo final {finalCost}")
+                print(f"{finalCost}")
 
                 FileHandler.dump_params(params, finalCost)
                 FileHandler.dump_values(costs, temps, iters)
                 # FileHandler.dump_probs(probs)
 
-                FileHandler.plot_costs("Tamanho: "+str(size)+": Função:"+funcs[f]+": Teste"+str(index))
-                FileHandler.plot_temps("Tamanho: "+str(size)+": Função:"+funcs[f]+": Teste"+str(index))
-                # FileHandler.plot_probs("Tamanho: "+str(size)+": Função:"+funcs[f]+": Teste"+str(index))
+                filename = str(size)+funcs[f]+"-"+str(index)
+                FileHandler.plot_costs(filename)
+                if not plotTemp[funcs[f]]:
+                    # vai plotar a temperatura de uma dada função só uma vez
+                    FileHandler.plot_temps(filename)
+                    plotTemp[funcs[f]] = True
+                # FileHandler.plot_probs(filename)
 
 if __name__ == "__main__":
     main()

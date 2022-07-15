@@ -16,13 +16,13 @@ def dist_euclidiana(node, otherNode) -> float:
     """Calcula a distância euclidiana entre dois nós"""
     return sqrt((otherNode.position[0]-node.position[0])**2 + (otherNode.position[1]-node.position[1])**2)
 
-def get_labels(nodeList:list) -> list:
+def get_labels(nodeDict:dict) -> list:
     """
-    Dada uma lista de nós, retorna uma lista contendo todas as labels dos nós
+    Dada um dict de nós, retorna uma lista contendo todas as labels dos nós
     """
     labelList = []
-    for node in nodeList:
-        labelList.append(node.label)
+    for label in nodeDict:
+        labelList.append(label)
 
     return labelList
 

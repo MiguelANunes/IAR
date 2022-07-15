@@ -15,9 +15,9 @@ def initialize(size:int) -> tuple:
     
     distancias = dict()
 
-    for node in nodes:
+    for label, node in nodes.items():
         tempDict = dict()
-        for node1 in nodes:
+        for label, node1 in nodes.items():
             if node == node1: 
                 # não calcula distância de um nó para ele mesmo
                 continue
@@ -34,18 +34,19 @@ def initialize(size:int) -> tuple:
 
     return (nodes, distancias)
 
-def load_nodes(size:int) -> list: 
+def load_nodes(size:int) -> dict: 
     """
     Função que lê de um arquivo os dados de uma dada instância
     Recebe o tamanho a instância, 51 ou 100
-    Retorna uma lista de todos os nós
+    Retorna um dicionário contendo todos os nós
     """
     nodes = []
     try:
         with open(f"inputs/mapa{size}.txt") as f:
+            nodes = dict()
             for line in f:
                 node = tuple(map(int, (line.replace("\t","").rstrip("\n").split(" "))))
-                nodes.append(Dados.Node(node[0], node[1], node[2]))
+                nodes[node[0]] = Dados.Node(node[0], node[1], node[2])
     except OSError:
         print("Erro ao ler os nós", file=stderr)
         return None
@@ -135,7 +136,7 @@ def plot_costs(index:str) -> None:
     pyplot.title("Custos")
     pyplot.legend()
 
-    pyplot.savefig(f"images/Custos - {index}.png")
+    pyplot.savefig(f"images/C{index}.png")
     pyplot.close()
 
 def plot_temps(index:str) -> None:
@@ -163,7 +164,7 @@ def plot_temps(index:str) -> None:
     pyplot.title("Temperaturas")
     pyplot.legend()
 
-    pyplot.savefig(f"images/Temperaturas - {index}.png")
+    pyplot.savefig(f"images/T{index}.png")
     pyplot.close()
 
 def plot_probs(index:str) -> None:
@@ -191,5 +192,5 @@ def plot_probs(index:str) -> None:
     pyplot.title("Probabilidades")
     pyplot.legend()
 
-    pyplot.savefig(f"images/Probabilidades - {index}.png")
+    pyplot.savefig(f"images/{index}.png")
     pyplot.close()

@@ -3,15 +3,17 @@ from copy import copy
 from random import randint, shuffle, random
 from math import exp
 
-def calculate_cost(nodeList:list, solution:list, distances:dict) -> int:
+def calculate_cost(nodeDict:dict, solution:list, distances:dict) -> int:
     """
-    Calcula o custo de uma dada solução, com base nas distâncias dos dados
+    Calcula o custo de uma dada solução (lista de labels), com base nas distâncias dos dados
     Retorna o custo calculado
     """
     cost = 0
     for i in range(len(solution)-1):
-        prevNode = Dados.get_node_from_label(nodeList, solution[i])
-        nextNode = Dados.get_node_from_label(nodeList, solution[i+1])
+        prevNode = nodeDict[solution[i]]
+        # Dados.get_node_from_label(nodeDict, solution[i])
+        nextNode = nodeDict[solution[i+1]]
+        # Dados.get_node_from_label(nodeDict, solution[i+1])
         cost += distances[prevNode][nextNode]
     
     return cost
@@ -29,7 +31,7 @@ def generate_neighbor(solution:list) -> list:
     
     return newSolution
 
-def simulated_annealing(nodeList:list, distances:dict, params:dict) -> list:
+def simulated_annealing(nodeDict:list, distances:dict, params:dict) -> list:
     """
     Algoritmo do Simulated Annealing
     Recebe uma solução inicial (uma sequência de nós) para o TSP 
@@ -43,9 +45,9 @@ def simulated_annealing(nodeList:list, distances:dict, params:dict) -> list:
     maxIter         = params["maxIter"]
     func            = params["func"]
 
-    initialSolution = Dados.get_labels(nodeList)
+    initialSolution = Dados.get_labels(nodeDict)
     shuffle(initialSolution)
-    startingCost    = calculate_cost(nodeList, initialSolution, distances)
+    startingCost    = calculate_cost(nodeDict, initialSolution, distances)
     # gerando uma solução inicial e calculando o custo dessa solução
 
     currentSolution = initialSolution
@@ -61,7 +63,7 @@ def simulated_annealing(nodeList:list, distances:dict, params:dict) -> list:
         
         for _ in range(constMetropolis):
             newSolution = generate_neighbor(currentSolution)
-            newCost     = calculate_cost(nodeList, newSolution, distances)
+            newCost     = calculate_cost(nodeDict, newSolution, distances)
 
             if newCost < currentCost:
                 # se achou uma solução melhor, troca

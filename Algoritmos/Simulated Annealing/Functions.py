@@ -43,3 +43,19 @@ def func9(startTemp: int, curIter: int, finalTemp:int, maxIter:int) -> float:
     """Função de resfriamento 9"""
     a = -1*((1/maxIter**2)*log(startTemp/finalTemp))
     return startTemp*exp(a*curIter**2)
+
+def get_best_param(size:int, funcName:str) -> dict:
+    """
+    Dado o tamanho de uma instância 
+    """
+    bestParams = dict()
+
+    if size == 51:
+        # Caso 51 nós
+        bestParams["func3"] = {"metropolis":5, "startTemp":200_000, "finalTemp":0, "maxIter":100}
+        bestParams["func6"] = {"metropolis":5, "startTemp":100, "finalTemp":0, "maxIter":40_000}
+
+        return bestParams[funcName]
+    else:
+        # Caso 100 nós
+        pass
