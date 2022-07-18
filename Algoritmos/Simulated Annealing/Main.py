@@ -1,7 +1,9 @@
 import Logic, FileHandler
 from Functions import *
+from time import time
 #from contextlib import redirect_stdout
 
+# TODO: https://stackoverflow.com/questions/68960005/saving-an-animated-matplotlib-graph-as-a-gif-file-results-in-a-different-looking
 
 def print_solution(nodeDict:dict, solution:list) -> None:
     """
@@ -23,15 +25,18 @@ def main() -> None:
     print("Valor ótimo para 51:   426")
     print("Valor ótimo para 100:  21_282")
 
-    funcs    = {51: {func6:"func6", func7:"func7", func9:"func9"}, 100: {func6:"func6", func7:"func7", func9:"func9"}}
-    plotTemp = {(name, size): False for size,funs in funcs.items() for _, name in  funs.items()}
+    funcs     = {51: {func6:"func6", func7:"func7", func9:"func9"}, 100: {func6:"func6", func7:"func7", func9:"func9"}}
+    plotTemp  = {(name, size): False for size,funs in funcs.items() for _, name in  funs.items()}
+    bestCosts = {51: (10**6, "func", -1), 100: (10**6, "func", -1)}
+    bestPath  = {51: None, 100: None}
+    times     = {(size, name): [] for size in [51, 100] for _,funs in funcs.items() for _, name in  funs.items()}
 
     for size in [51, 100]:
         nodes, distances = FileHandler.initialize(size)
         print(f"Tamanho {size}")
-        for index in range(10):
+        for test in range(2):
             
-            print(f"\tTeste {index}")
+            print(f"\tTeste {test}")
             for f in funcs[size]:
 
                 print(f"\t\t{funcs[size][f]}:", end=" ")
@@ -39,8 +44,10 @@ def main() -> None:
                 params             = get_best_param(size, funcs[size][f])
                 params["func"]     = f
                 params["funcName"] = funcs[size][f]
-
+                
+                start                  = time()
                 results                = Logic.simulated_annealing(nodes, distances, params)
+                end                    = time()
                 costs                  = results["costs"]
                 temps                  = results["temps"]
                 iters                  = results["iters"]
@@ -48,22 +55,28 @@ def main() -> None:
                 # probs = results["probs"]
 
                 print(f"{bestCost:.3f}")
-                
-                # with open(f"outputs/best.txt","a") as f:
-                #     with redirect_stdout(f):
-                #         print(f"{bestCost}")
-                #         print_solution(nodes, bestSolution)
+                print(f"\t\tTempo Gasto: {end-start:.3f}")
+                times[(size, funcs[size][f])].append(end-start)
+
+                if bestCost <= bestCosts[size][0]:
+                    bestCosts[size] = (bestCost, funcs[size][f], test)
+                    bestPath[size]  = bestSolution
 
                 FileHandler.dump_params(size, params, bestCost)
                 FileHandler.dump_values(costs, temps, iters)
                 # FileHandler.dump_probs(probs)
 
-                filename = str(size)+funcs[size][f]+"-"+str(index)
-                FileHandler.plot_costs(filename, index)
+                filename = str(size)+funcs[size][f]+"-"+str(test)
+                FileHandler.plot_costs(filename, test)
                 if not plotTemp[(funcs[size][f], size)]:
                     #plota a temperatura de uma dada função só uma vez
                     FileHandler.plot_temps(filename, funcs[size][f])
                     plotTemp[(funcs[size][f], size)] = True
+
+    FileHandler.dump_times(times)
+
+    print(f"Melhor caso 51: {bestCosts[51]}")
+    print(f"Melhor caso 100: {bestCosts[100]}")
 
 if __name__ == "__main__":
     main()

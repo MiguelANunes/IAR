@@ -112,6 +112,25 @@ def dump_probs(probs: list) -> None:
         print("Não consegui escrever as probabilidades", file=stderr)
         exit()
 
+def dump_times(times: dict) -> None:
+    """
+    Escreve num arquivo de log os tempos de execução de cada função
+    """
+    try:
+        with open(f"outputs/tempos.txt","a") as f:
+            with redirect_stdout(f):
+                for key in times:
+                    if times[key] == []:
+                        continue
+                    print(f"{key[0]} {key[1]}",end="")
+                    for time in times[key]:
+                        print(f" {time:.3f}", end="")
+                    print()
+
+    except OSError:
+        print("Não consegui escrever os tempos", file=stderr)
+        exit()
+
 def plot_costs(filename:str, index:int) -> None:
     """
     Plota um gráfico contendo os valores de custos gerados pelo SA
