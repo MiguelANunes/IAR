@@ -28,7 +28,7 @@ def initialize(size:int) -> tuple:
             tempDict[node1] = Dados.dist_euclidiana(node, node1)
         distancias[node] = tempDict
 
-    with open(f"outputs/params.txt","w") as f:
+    with open(f"outputs/params.txt","w+") as f:
         # limpando o arquivo de parametros
         pass
 
@@ -53,19 +53,20 @@ def load_nodes(size:int) -> dict:
     
     return nodes
 
-def dump_params(params:dict, finalCost:float) -> None:
+def dump_params(size:int, params:dict, bestCost:float) -> None:
     """
     Escreve num arquivo de log os parametros de uma execução do SA e o seu custo
     """
     try:
         with open(f"outputs/params.txt","a") as f:
             with redirect_stdout(f):
+                print(f"{'Tamanho':<15} {size:>15}")
                 for key in params:
                         if key == "func": 
                             # ignoro a função que foi usada
                             continue
                         print(f"{key:<15} {params[key]:>15}")
-                print(f"{'Custo':<15} {finalCost:>15.4f}\n")
+                print(f"{'Custo':<15} {bestCost:>15.4f}\n")
 
     except OSError:
         print("Não consegui escrever os parametros", file=stderr)
@@ -111,7 +112,7 @@ def dump_probs(probs: list) -> None:
         print("Não consegui escrever as probabilidades", file=stderr)
         exit()
 
-def plot_costs(index:str) -> None:
+def plot_costs(filename:str, index:int) -> None:
     """
     Plota um gráfico contendo os valores de custos gerados pelo SA
     """
@@ -133,13 +134,14 @@ def plot_costs(index:str) -> None:
     pyplot.xlabel("Iterações")
     pyplot.ylabel("Custos")
 
-    pyplot.title("Custos")
+    pyplot.title(f"Teste {index}")
     pyplot.legend()
 
-    pyplot.savefig(f"images/C{index}.png")
+    pyplot.legend(loc='best')
+    pyplot.savefig(f"images/C{filename}.png")
     pyplot.close()
 
-def plot_temps(index:str) -> None:
+def plot_temps(filename:str,  funcName:str) -> None:
     """
     Plota um gráfico contendo os valores de temperaturas gerados pelo SA
     """
@@ -161,13 +163,14 @@ def plot_temps(index:str) -> None:
     pyplot.xlabel("Iterações")
     pyplot.ylabel("Temperaturas")
 
-    pyplot.title("Temperaturas")
+    pyplot.title(f"Temperaturas da Função {funcName}")
     pyplot.legend()
 
-    pyplot.savefig(f"images/T{index}.png")
+    pyplot.legend(loc='best')
+    pyplot.savefig(f"images/T{filename}.png")
     pyplot.close()
 
-def plot_probs(index:str) -> None:
+def plot_probs(filename:str) -> None:
     """
     Plota um gráfico contendo os valores de probabilidades gerados pelo SA
     """
@@ -192,5 +195,6 @@ def plot_probs(index:str) -> None:
     pyplot.title("Probabilidades")
     pyplot.legend()
 
-    pyplot.savefig(f"images/{index}.png")
+    pyplot.savefig(f"images/{filename}.png")
+    pyplot.legend(loc='best')
     pyplot.close()

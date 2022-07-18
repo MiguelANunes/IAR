@@ -20,7 +20,7 @@ def func3(startTemp: int, curIter: int, finalTemp:int, maxIter:int) -> float:
 
 def func4(startTemp: int, curIter: int, finalTemp:int, maxIter:int) -> float:
     """Função de resfriamento 4"""
-    return ((startTemp-finalTemp)/(1+exp(3*(curIter-(maxIter/2))))) + finalTemp
+    return ((startTemp-finalTemp)/(1+exp(0.3*(curIter-(maxIter/2))))) + finalTemp
 
 def func5(startTemp: int, curIter: int, finalTemp:int, maxIter:int) -> float:
     """Função de resfriamento 5"""
@@ -52,10 +52,15 @@ def get_best_param(size:int, funcName:str) -> dict:
 
     if size == 51:
         # Caso 51 nós
-        bestParams["func3"] = {"metropolis":5, "startTemp":200_000, "finalTemp":0, "maxIter":100}
-        bestParams["func6"] = {"metropolis":5, "startTemp":100, "finalTemp":0, "maxIter":40_000}
-
-        return bestParams[funcName]
-    else:
+        # bestParams["func3"] = {"metropolis":5, "startTemp":200_000,  "finalTemp":0, "maxIter":100}
+        # bestParams["func4"] = {"metropolis":5, "startTemp":1_000_00, "finalTemp":0, "maxIter":4730}
+        bestParams["func6"] = {"metropolis":10, "startTemp":100,       "finalTemp":0, "maxIter":30_000}
+        bestParams["func7"] = {"metropolis":10, "startTemp":1000,      "finalTemp":0, "maxIter":30_000}
+        bestParams["func9"] = {"metropolis":20, "startTemp":1_000_000, "finalTemp":1, "maxIter":20_000}
+    else:   
         # Caso 100 nós
-        pass
+        bestParams["func6"] = {"metropolis":30, "startTemp":15_000,    "finalTemp":0, "maxIter":200_000}
+        bestParams["func7"] = {"metropolis":30, "startTemp":100_000,   "finalTemp":0, "maxIter":200_000}
+        bestParams["func9"] = {"metropolis":30, "startTemp":1_000_000, "finalTemp":1, "maxIter":200_000}
+    
+    return bestParams[funcName]

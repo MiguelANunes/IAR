@@ -11,9 +11,7 @@ def calculate_cost(nodeDict:dict, solution:list, distances:dict) -> int:
     cost = 0
     for i in range(len(solution)-1):
         prevNode = nodeDict[solution[i]]
-        # Dados.get_node_from_label(nodeDict, solution[i])
         nextNode = nodeDict[solution[i+1]]
-        # Dados.get_node_from_label(nodeDict, solution[i+1])
         cost += distances[prevNode][nextNode]
     
     return cost
@@ -48,6 +46,8 @@ def simulated_annealing(nodeDict:list, distances:dict, params:dict) -> list:
     initialSolution = Dados.get_labels(nodeDict)
     shuffle(initialSolution)
     startingCost    = calculate_cost(nodeDict, initialSolution, distances)
+    bestSolution    = initialSolution
+    bestCost        = startingCost
     # gerando uma solução inicial e calculando o custo dessa solução
 
     currentSolution = initialSolution
@@ -75,6 +75,10 @@ def simulated_annealing(nodeDict:list, distances:dict, params:dict) -> list:
                 # Se passar, troca para a solução pior
                 currentCost     = newCost
                 currentSolution = newSolution
+            
+            if currentCost <= bestCost:
+                bestCost     = currentCost
+                bestSolution = currentSolution
         
 
         temperature = func(startTemp, iteracao, finalTemp, maxIter)
@@ -86,4 +90,4 @@ def simulated_annealing(nodeDict:list, distances:dict, params:dict) -> list:
         if temperature == finalTemp:
             break
 
-    return {"costs":costs, "temps":temperatures, "iters":iterations, "probs":probs, "finalCost": currentCost}
+    return {"costs":costs, "temps":temperatures, "iters":iterations, "probs":probs, "bestResult": (bestCost, bestSolution)}
