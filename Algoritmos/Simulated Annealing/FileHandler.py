@@ -97,6 +97,20 @@ def dump_values(costs: list, temps:list, iters:list) -> None:
         print("Não consegui escrever as temperaturas", file=stderr)
         exit()
 
+def dump_best(bests:dict) -> None:
+    """
+    Escreve num arquivo os melhores resultados obtidos
+    """
+    try:
+        with open(f"results/melhores.txt","w") as f:
+            with redirect_stdout(f):
+                for key, values in bests.items():
+                    print(f"{key}: {values[0]:.5f}, {values[1]}, teste:{values[2]}")
+
+    except OSError:
+        print("Não consegui escrever os melhores resultados", file=stderr)
+        exit()
+
 def dump_probs(probs: list) -> None:
     """
     Função que escreve num arquivo de log os resultados do SA
@@ -117,7 +131,7 @@ def dump_times(times: dict) -> None:
     Escreve num arquivo de log os tempos de execução de cada função
     """
     try:
-        with open(f"outputs/tempos.txt","a") as f:
+        with open(f"results/tempos.txt","a") as f:
             with redirect_stdout(f):
                 for key in times:
                     if times[key] == []:
@@ -129,6 +143,25 @@ def dump_times(times: dict) -> None:
 
     except OSError:
         print("Não consegui escrever os tempos", file=stderr)
+        exit()
+
+def dump_final_results(finalResults: dict) -> None:
+    """
+    Escreve num arquivo de log os tempos de execução de cada função
+    """
+    try:
+        with open(f"results/finais.txt","a") as f:
+            with redirect_stdout(f):
+                for key in finalResults:
+                    if finalResults[key] == []:
+                        continue
+                    print(f"{key[0]} {key[1]}",end="")
+                    for results in finalResults[key]:
+                        print(f" {results:.3f}", end="")
+                    print()
+
+    except OSError:
+        print("Não consegui escrever os resultados finais", file=stderr)
         exit()
 
 def plot_costs(filename:str, index:int) -> None:

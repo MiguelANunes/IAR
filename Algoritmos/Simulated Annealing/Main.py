@@ -25,16 +25,19 @@ def main() -> None:
     print("Valor ótimo para 51:   426")
     print("Valor ótimo para 100:  21_282")
 
-    funcs     = {51: {func6:"func6", func7:"func7", func9:"func9"}, 100: {func6:"func6", func7:"func7", func9:"func9"}}
-    plotTemp  = {(name, size): False for size,funs in funcs.items() for _, name in  funs.items()}
-    bestCosts = {51: (10**6, "func", -1), 100: (10**6, "func", -1)}
-    bestPath  = {51: None, 100: None}
-    times     = {(size, name): [] for size in [51, 100] for _,funs in funcs.items() for _, name in  funs.items()}
+    funcs           = {51: {func6:"func6", func7:"func7", func9:"func9"}, 100: {func6:"func6", func7:"func7", func9:"func9"}}
+
+    bestCosts       = {51: (10**6, "x", -1), 100: (10**6, "x", -1)}
+    bestPath        = {51: None, 100: None}
+    
+    plotTemp        = {(name, size): False for size,funs in funcs.items() for _, name in  funs.items()}
+    times           = {(name, size): [] for size in [51, 100] for _,funs in funcs.items() for _, name in  funs.items()}
+    finalResults    = {(name, size): [] for size in [51, 100] for _,funs in funcs.items() for _, name in  funs.items()}
 
     for size in [51, 100]:
         nodes, distances = FileHandler.initialize(size)
         print(f"Tamanho {size}")
-        for test in range(2):
+        for test in range(10):
             
             print(f"\tTeste {test}")
             for f in funcs[size]:
@@ -52,11 +55,13 @@ def main() -> None:
                 temps                  = results["temps"]
                 iters                  = results["iters"]
                 bestCost, bestSolution = results["bestResult"]
-                # probs = results["probs"]
+                # probs                = results["probs"]
 
                 print(f"{bestCost:.3f}")
                 print(f"\t\tTempo Gasto: {end-start:.3f}")
-                times[(size, funcs[size][f])].append(end-start)
+                
+                times[(funcs[size][f], size)].append(end-start)
+                finalResults[(funcs[size][f], size)].append(bestCost)
 
                 if bestCost <= bestCosts[size][0]:
                     bestCosts[size] = (bestCost, funcs[size][f], test)
@@ -73,7 +78,10 @@ def main() -> None:
                     FileHandler.plot_temps(filename, funcs[size][f])
                     plotTemp[(funcs[size][f], size)] = True
 
-    FileHandler.dump_times(times)
+
+    FileHandler.dump_times        (times)
+    FileHandler.dump_final_results(finalResults)
+    FileHandler.dump_best         (bestCosts)
 
     print(f"Melhor caso 51: {bestCosts[51]}")
     print(f"Melhor caso 100: {bestCosts[100]}")

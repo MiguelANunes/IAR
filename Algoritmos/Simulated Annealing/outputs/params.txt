@@ -4,7 +4,7 @@ startTemp                 15000
 finalTemp                     0
 maxIter                  200000
 funcName                  func6
-Custo                23901.2254
+Custo                25813.8866
 
 Tamanho                     100
 metropolis                   30
@@ -12,7 +12,7 @@ startTemp                100000
 finalTemp                     0
 maxIter                  200000
 funcName                  func7
-Custo                22708.7685
+Custo                23234.7163
 
 Tamanho                     100
 metropolis                   30
@@ -20,7 +20,7 @@ startTemp               1000000
 finalTemp                     1
 maxIter                  200000
 funcName                  func9
-Custo                24492.9891
+Custo                23977.1502
 
 Tamanho                     100
 metropolis                   30
@@ -28,5 +28,213 @@ startTemp                 15000
 finalTemp                     0
 maxIter                  200000
 funcName                  func6
-Custo                25053.6236
+Custo                22387.0821
+
+Tamanho                     100
+metropolis                   30
+startTemp                100000
+finalTemp                     0
+maxIter                  200000
+funcName                  func7
+Custo                23999.4443
+
+Tamanho                     100
+metropolis                   30
+startTemp               1000000
+finalTemp                     1
+maxIter                  200000
+funcName                  func9
+Custo                24415.8324
+
+Tamanho                     100
+metropolis                   30
+startTemp                 15000
+finalTemp                     0
+maxIter                  200000
+funcName                  func6
+Custo                25813.0781
+
+Tamanho                     100
+metropolis                   30
+startTemp                100000
+finalTemp                     0
+maxIter                  200000
+funcName                  func7
+Custo                22148.4784
+
+Tamanho                     100
+metropolis                   30
+startTemp               1000000
+finalTemp                     1
+maxIter                  200000
+funcName                  func9
+Custo                26918.8158
+
+Tamanho                     100
+metropolis                   30
+startTemp                 15000
+finalTemp                     0
+maxIter                  200000
+funcName                  func6
+Custo                24912.4621
+
+Tamanho                     100
+metropolis                   30
+startTemp                100000
+finalTemp                     0
+maxIter                  200000
+funcName                  func7
+Custo                22769.8075
+
+Tamanho                     100
+metropolis                   30
+startTemp               1000000
+finalTemp                     1
+maxIter                  200000
+funcName                  func9
+Custo                22794.9824
+
+Tamanho                     100
+metropolis                   30
+startTemp                 15000
+finalTemp                     0
+maxIter                  200000
+funcName                  func6
+Custo                25251.2591
+
+Tamanho                     100
+metropolis                   30
+startTemp                100000
+finalTemp                     0
+maxIter                  200000
+funcName                  func7
+Custo                23016.1467
+
+Tamanho                     100
+metropolis                   30
+startTemp               1000000
+finalTemp                     1
+maxIter                  200000
+funcName                  func9
+Custo                24385.0333
+
+Tamanho                     100
+metropolis                   30
+startTemp                 15000
+finalTemp                     0
+maxIter                  200000
+funcName                  func6
+Custo                24574.0514
+
+Tamanho                     100
+metropolis                   30
+startTemp                100000
+finalTemp                     0
+maxIter                  200000
+funcName                  func7
+Custo                22658.1949
+
+Tamanho                     100
+metropolis                   30
+startTemp               1000000
+finalTemp                     1
+maxIter                  200000
+funcName                  func9
+Custo                23590.9930
+
+Tamanho                     100
+metropolis                   30
+startTemp                 15000
+finalTemp                     0
+maxIter                  200000
+funcName                  func6
+Custo                26637.5323
+
+Tamanho                     100
+metropolis                   30
+startTemp                100000
+finalTemp                     0
+maxIter                  200000
+funcName                  func7
+Custo                22642.3825
+
+Tamanho                     100
+metropolis                   30
+startTemp               1000000
+finalTemp                     1
+maxIter                  200000
+funcName                  func9
+Custo                25357.1169
+
+Tamanho                     100
+metropolis                   30
+startTemp                 15000
+finalTemp                     0
+maxIter                  200000
+funcName                  func6
+Custo                23531.1792
+
+Tamanho                     100
+metropolis                   30
+startTemp                100000
+finalTemp                     0
+maxIter                  200000
+funcName                  func7
+Custo                23032.4542
+
+Tamanho                     100
+metropolis                   30
+startTemp               1000000
+finalTemp                     1
+maxIter                  200000
+funcName                  func9
+Custo                24733.2429
+
+Tamanho                     100
+metropolis                   30
+startTemp                 15000
+finalTemp                     0
+maxIter                  200000
+funcName                  func6
+Custo                24317.8768
+
+Tamanho                     100
+metropolis                   30
+startTemp                100000
+finalTemp                     0
+maxIter                  200000
+funcName                  func7
+Custo                23954.9957
+
+Tamanho                     100
+metropolis                   30
+startTemp               1000000
+finalTemp                     1
+maxIter                  200000
+funcName                  func9
+Custo                24587.2089
+
+Tamanho                     100
+metropolis                   30
+startTemp                 15000
+finalTemp                     0
+maxIter                  200000
+funcName                  func6
+Custo                23627.8040
+
+Tamanho                     100
+metropolis                   30
+startTemp                100000
+finalTemp                     0
+maxIter                  200000
+funcName                  func7
+Custo                23084.5480
+
+Tamanho                     100
+metropolis                   30
+startTemp               1000000
+finalTemp                     1
+maxIter                  200000
+funcName                  func9
+Custo                22153.3039
 
