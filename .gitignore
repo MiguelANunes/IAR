@@ -1,7 +1,7 @@
 *.pdf
 *.xopp
-__pycache__/
+__pycache__/**
 *.jpg
 *.png
-outpus/
-results/
+outpus/**
+results/**
